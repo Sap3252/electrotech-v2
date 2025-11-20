@@ -1,28 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSessionClient } from "@/lib/sessionClient";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+export function ProtectedRoute({ children }: any) {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const response = await fetch("/api/auth/verify", {
-          credentials: "include",
-        });
+    async function verify() {
+      const session = await getSessionClient();
 
-        if (!response.ok) {
-          router.push("/login");
-        }
-      } catch {
-        router.push("/login");
+      if (!session) {
+        router.replace("/login");
+        return;
       }
+
+      setReady(true);
     }
 
-    checkAuth();
-  }, [router]);
+    verify();
+  }, []);
 
-  return <>{children}</>;
+  if (!ready) return null;
+  return children;
 }
+
