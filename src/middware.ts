@@ -23,6 +23,8 @@ export async function middleware(req: Request) {
     "/remitos": 2,
     "/maquinarias": 3,
     "/empleados": 4,
+    "/reportes": 5,
+
   };
 
   const pathname = url.pathname;

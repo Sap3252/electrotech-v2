@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasCoreAccess } from "@/lib/auth";
+import { StandardPaintStrategy } from "@/domain/strategy/StandardPaintStrategy";
+import { HighDensityPaintStrategy } from "@/domain/strategy/HighDensityPaintStrategy";
 
 // ============================
 // GET: obtener todas las piezas pintadas
@@ -40,6 +42,10 @@ export async function GET() {
   }
 }
 
+
+// 2) A partir de acá seguís con el cálculo de consumo + INSERT
+
+
 // ============================
 // POST: crear nueva pieza pintada
 // ============================
@@ -49,42 +55,66 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
-  const { id_pieza, id_pintura, cantidad } = await req.json();
+  const { id_pieza, id_pintura, cantidad, espesor_um, densidad_g_cm3, estrategia } = await req.json();
 
   try {
-    // Obtener datos de pieza y pintura para calcular consumo
+    // 1) Verificar stock disponible
+    const [stockRows] = await pool.query(
+      "SELECT stock_disponible FROM StockPieza WHERE id_pieza = ?",
+      [id_pieza]
+    );
+    const stockRow: any = (stockRows as any[])[0];
+    const stockDisponible = stockRow?.stock_disponible ?? 0;
+
+    if (stockDisponible < cantidad) {
+      return NextResponse.json(
+        {
+          error: `No hay stock suficiente para pintar esta cantidad. Stock disponible: ${stockDisponible}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 2) Obtener dimensiones de la pieza
     const [piezaRows]: any = await pool.query(
       "SELECT ancho_m, alto_m FROM Pieza WHERE id_pieza = ?",
       [id_pieza]
     );
-    const [pinturaRows]: any = await pool.query(
-      "SELECT espesor_um, densidad_g_cm3 FROM Pintura WHERE id_pintura = ?",
-      [id_pintura]
-    );
 
-    if (!piezaRows[0] || !pinturaRows[0]) {
-      return NextResponse.json({ error: "Pieza o pintura no encontrada" }, { status: 404 });
+    if (!piezaRows[0]) {
+      return NextResponse.json({ error: "Pieza no encontrada" }, { status: 404 });
     }
 
     const pieza = piezaRows[0];
-    const pintura = pinturaRows[0];
 
-    // Calcular área y consumo (Strategy pattern podría aplicarse aquí)
-    const area_m2 = pieza.ancho_m * pieza.alto_m;
-    const espesor_m = pintura.espesor_um / 1_000_000;
-    const volumen_m3 = area_m2 * espesor_m * cantidad;
-    const consumo_kg = volumen_m3 * pintura.densidad_g_cm3 * 1_000_000;
+    // 3) Calcular consumo usando Strategy pattern
+    const strategy = estrategia === "highdensity" 
+      ? new HighDensityPaintStrategy() 
+      : new StandardPaintStrategy();
+    
+    const consumo_por_pieza = strategy.calcularConsumo(
+      pieza.ancho_m,
+      pieza.alto_m,
+      espesor_um,
+      densidad_g_cm3
+    );
+    
+    const consumo_total_kg = consumo_por_pieza * cantidad;
 
-    // Insertar registro
+    // 4) Insertar registro
     await pool.query(
       `
       INSERT INTO PiezaPintada (id_pieza, id_pintura, cantidad, consumo_estimado_kg, fecha)
       VALUES (?, ?, ?, ?, NOW())
       `,
-      [id_pieza, id_pintura, cantidad, consumo_kg]
+      [id_pieza, id_pintura, cantidad, consumo_total_kg]
     );
 
-    return NextResponse.json({ ok: true, consumo_kg });
+    return NextResponse.json({ 
+      ok: true, 
+      consumo_por_pieza_kg: consumo_por_pieza.toFixed(4),
+      consumo_total_kg: consumo_total_kg.toFixed(4)
+    });
   } catch (error) {
     console.error("Error POST pieza pintada:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

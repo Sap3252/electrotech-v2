@@ -27,7 +27,7 @@ export default function PinturasPage() {
     id_color: "",
     id_proveedor: "",
     precio_unitario: "",
-    stock_actual: "",
+    cantidad_kg: "",
   });
 
   const cargarPinturas = async () => {
@@ -93,7 +93,7 @@ export default function PinturasPage() {
         id_color: "",
         id_proveedor: "",
         precio_unitario: "",
-        stock_actual: "",
+        cantidad_kg: "",
       });
     }
   };
@@ -214,14 +214,15 @@ export default function PinturasPage() {
             </div>
                 
             <div>
-              <Label>Stock Actual</Label>
+              <Label>Cantidad (kg)</Label>
               <Input
                 type="number"
-                value={form.stock_actual}
+                step="0.01"
+                value={form.cantidad_kg}
                 onChange={(e) =>
-                  setForm({ ...form, stock_actual: e.target.value })
+                  setForm({ ...form, cantidad_kg: e.target.value })
                 }
-                placeholder="0"
+                placeholder="0.00"
                 required
               />
             </div>
@@ -244,7 +245,7 @@ export default function PinturasPage() {
                   <th className="text-left p-2">Color</th>
                   <th className="text-left p-2">Proveedor</th>
                   <th className="text-left p-2">Precio</th>
-                  <th className="text-left p-2">Stock</th>
+                  <th className="text-left p-2">Cantidad (kg)</th>
                 </tr>
               </thead>
               <tbody>
@@ -256,7 +257,7 @@ export default function PinturasPage() {
                     <td className="p-2">{p.color || p.id_color}</td>
                     <td className="p-2">{p.proveedor || p.id_proveedor}</td>
                     <td className="p-2">${p.precio_unitario}</td>
-                    <td className="p-2">{p.stock_actual}</td>
+                    <td className="p-2">{p.cantidad_kg} kg</td>
                   </tr>
                 ))}
               </tbody>

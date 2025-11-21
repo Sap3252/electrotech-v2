@@ -66,7 +66,7 @@ export default function CalculadoraPintura() {
               }
               onClick={() => setStrategy("standard")}
             >
-              Strategy Estándar
+              Densidad Estándar
             </Button>
 
             <Button
@@ -77,7 +77,7 @@ export default function CalculadoraPintura() {
               }
               onClick={() => setStrategy("high")}
             >
-              Strategy Alta Densidad
+              Alta Densidad
             </Button>
           </div>
 

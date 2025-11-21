@@ -1,0 +1,80 @@
+import { NextResponse } from "next/server";
+import { pool } from "@/lib/db";
+import { getSession, hasCoreAccess } from "@/lib/auth";
+
+// -------------------------------------
+// GET: Listar remitos con info del cliente
+// -------------------------------------
+export async function GET() {
+  const session = await getSession();
+  if (!hasCoreAccess(session, 2)) {
+    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+  }
+
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        r.id_remito,
+        r.fecha_recepcion,
+        r.cantidad_piezas,
+        c.nombre AS cliente_nombre
+      FROM Remito r
+      JOIN Cliente c ON c.id_cliente = r.id_cliente
+      ORDER BY r.fecha_recepcion DESC
+    `);
+
+    return NextResponse.json(rows);
+  } catch (err) {
+    console.error("Error GET /remitos:", err);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}
+
+// -------------------------------------
+// POST: Crear remito + detalles
+// -------------------------------------
+export async function POST(req: Request) {
+  const session = await getSession();
+  if (!hasCoreAccess(session, 2)) {
+    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+    const { id_cliente, fecha_recepcion, piezas } = body;
+
+    if (!piezas || piezas.length === 0) {
+      return NextResponse.json(
+        { error: "Debe enviar al menos una pieza" },
+        { status: 400 }
+      );
+    }
+
+    // Insertar remito
+    const [remitoRes]: any = await pool.query(
+      `
+      INSERT INTO Remito (id_cliente, fecha_recepcion, cantidad_piezas)
+      VALUES (?, ?, ?)
+      `,
+      [id_cliente, fecha_recepcion, piezas.length]
+    );
+
+    const id_remito = remitoRes.insertId;
+
+    // Insertar detalles
+    for (const p of piezas) {
+      await pool.query(
+        `
+        INSERT INTO RemitoDetalle (id_remito, id_pieza, cantidad)
+        VALUES (?, ?, ?)
+        `,
+        [id_remito, p.id_pieza, p.cantidad]
+      );
+    }
+
+    return NextResponse.json({ ok: true, id_remito });
+  } catch (err) {
+    console.error("Error POST /remitos:", err);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}

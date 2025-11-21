@@ -80,9 +80,10 @@ export async function getSession(): Promise<SessionData | null> {
 
 const CORE_ACCESS: Record<number, string[]> = {
   1: ["Admin", "Admisión y Control"],          // Core 1 – Piezas & Pinturas
-  2: ["Admin", "Contabilidad", "Gerente"],     // Core 2 – Facturación / Remitos / Reportes
+  2: ["Admin", "Contabilidad"],     // Core 2 – Facturación / Remitos 
   3: ["Admin", "Operario"],                    // Core 3 – Maquinaria
   4: ["Admin", "Recursos Humanos"],            // Core 4 – Empleados
+  5: ["Admin", "Gerente"],                     // Core 5 – Reportes
 };
 
 export function hasCoreAccess(session: SessionData | null, core: number): boolean {

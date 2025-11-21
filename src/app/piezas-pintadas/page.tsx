@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 type Pieza = {
   id_pieza: number;
@@ -42,7 +49,20 @@ export default function PiezasPintadasPage() {
   const [idPieza, setIdPieza] = useState<number | "">("");
   const [idPintura, setIdPintura] = useState<number | "">("");
   const [cantidad, setCantidad] = useState<number>(1);
+  const [espesor, setEspesor] = useState<number>(50);
+  const [densidad, setDensidad] = useState<number>(1.2);
+  const [estrategia, setEstrategia] = useState<string>("standard");
   const [loading, setLoading] = useState(false);
+
+  const [piezaSeleccionada, setPiezaSeleccionada] = useState<string>("");
+  const [stockInfo, setStockInfo] = useState<{
+    total_recibida: number;
+    total_pintada: number;
+    stock_disponible: number;
+  } | null>(null);
+
+  const [mensajeError, setMensajeError] = useState<string>("");
+
 
   // Cargar combos y tabla
   useEffect(() => {
@@ -70,6 +90,15 @@ export default function PiezasPintadasPage() {
       return;
     }
 
+    // Validar stock disponible
+    if (stockInfo && cantidad > stockInfo.stock_disponible) {
+      setMensajeError(
+        `No podés pintar ${cantidad} piezas. Stock disponible: ${stockInfo.stock_disponible}.`
+      );
+      return;
+    }
+    setMensajeError("");
+
     setLoading(true);
     try {
       const res = await fetch("/api/piezas-pintadas", {
@@ -79,6 +108,9 @@ export default function PiezasPintadasPage() {
           id_pieza: idPieza,
           id_pintura: idPintura,
           cantidad,
+          espesor_um: espesor,
+          densidad_g_cm3: densidad,
+          estrategia,
         }),
       });
 
@@ -124,20 +156,59 @@ export default function PiezasPintadasPage() {
               <label className="block text-sm font-medium mb-1">
                 Pieza (cruda)
               </label>
-              <select
-                className="w-full border rounded px-2 py-1"
-                value={idPieza}
-                onChange={(e) =>
-                  setIdPieza(e.target.value ? Number(e.target.value) : "")
-                }
+              <Select
+                value={piezaSeleccionada}
+                onValueChange={async (value) => {
+                  setPiezaSeleccionada(value);
+                  setIdPieza(Number(value));
+                  setMensajeError("");
+
+                  const res = await fetch(`/api/stock/pieza/${value}`);
+                  if (res.ok) {
+                    const data = await res.json();
+                    setStockInfo({
+                      total_recibida: data.total_recibida,
+                      total_pintada: data.total_pintada,
+                      stock_disponible: data.stock_disponible,
+                    });
+                  } else {
+                    setStockInfo(null);
+                  }
+                }}
               >
-                <option value="">-- Seleccionar pieza --</option>
-                {piezas.map((p) => (
-                  <option key={p.id_pieza} value={p.id_pieza}>
-                    {p.id_pieza} — {p.detalle} ({p.ancho_m}m x {p.alto_m}m)
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Seleccionar pieza --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {piezas.map((p) => (
+                    <SelectItem key={p.id_pieza} value={String(p.id_pieza)}>
+                      {p.id_pieza} — {p.detalle} ({p.ancho_m}m x {p.alto_m}m)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {stockInfo && (
+                <div className="mt-4 p-4 rounded-lg bg-slate-50 border">
+                  <p className="font-semibold mb-1">Stock de la pieza seleccionada</p>
+                  <p>Recibidas por remitos: <strong>{stockInfo.total_recibida}</strong></p>
+                  <p>Ya pintadas: <strong>{stockInfo.total_pintada}</strong></p>
+                  <p>
+                    Disponibles para pintar:{" "}
+                    <strong
+                      className={
+                        stockInfo.stock_disponible > 0 ? "text-emerald-700" : "text-red-600"
+                      }
+                    >
+                      {stockInfo.stock_disponible}
+                    </strong>
+                  </p>
+                </div>
+              )}
+              
+              {mensajeError && (
+                <p className="mt-3 text-sm text-red-600 font-semibold">{mensajeError}</p>
+              )}
             </div>
 
             {/* PINTURA */}
@@ -171,6 +242,52 @@ export default function PiezasPintadasPage() {
                 min={1}
                 onChange={(e) => setCantidad(Number(e.target.value))}
               />
+            </div>
+
+            {/* ESPESOR */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Espesor de pintura (µm)
+              </label>
+              <input
+                type="number"
+                className="w-full border rounded px-2 py-1"
+                value={espesor}
+                min={1}
+                step={0.1}
+                onChange={(e) => setEspesor(Number(e.target.value))}
+              />
+            </div>
+
+            {/* DENSIDAD */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Densidad (g/cm³)
+              </label>
+              <input
+                type="number"
+                className="w-full border rounded px-2 py-1"
+                value={densidad}
+                min={0.1}
+                step={0.1}
+                onChange={(e) => setDensidad(Number(e.target.value))}
+              />
+            </div>
+
+            {/* ESTRATEGIA */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Tipo de cálculo (Strategy)
+              </label>
+              <Select value={estrategia} onValueChange={setEstrategia}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard (10% pérdida)</SelectItem>
+                  <SelectItem value="highdensity">High Density (15% pérdida + 1.5x densidad)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* BOTÓN REGISTRAR */}

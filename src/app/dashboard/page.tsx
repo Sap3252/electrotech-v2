@@ -105,17 +105,43 @@ export default function Dashboard() {
 
 
         {/* ---------------------- CORE 2 ---------------------- */}
-        <Card
-            className="shadow cursor-pointer hover:shadow-lg transition"
-            onClick={() => router.push("/core2")}
-          >
+          <Card className="shadow transition p-4">
             <CardHeader>
-              <CardTitle>Core 2 — Facturación y Remitos</CardTitle>
+              <CardTitle>Core 2 — Remitos & Facturación</CardTitle>
             </CardHeader>
+
             <CardContent>
-              <p>Carga de remitos, facturas, impresión y reportes avanzados.</p>
+              <p className="mb-4">
+                Registro de remitos, facturación y reportes avanzados.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => {
+                    setTimeout(() => router.push("/remitos"), 100);
+                  }}
+                >
+                  Gestionar Remitos
+                </Button>
+
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/facturas")}
+                >
+                  Gestionar Facturas
+                </Button>
+
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/reportes")}
+                >
+                  Reportes (solo Admin & Gerente)
+                </Button>
+              </div>
             </CardContent>
           </Card>
+
 
         {/* ---------------------- CORE 3 ---------------------- */}
         <Card
