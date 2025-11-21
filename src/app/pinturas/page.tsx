@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
+
 export default function PinturasPage() {
   const [pinturas, setPinturas] = useState([]);
   const [marcas, setMarcas] = useState([]);
@@ -96,6 +97,7 @@ export default function PinturasPage() {
       });
     }
   };
+  
 
   return (
     <ProtectedRoute>
@@ -105,6 +107,13 @@ export default function PinturasPage() {
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-xl font-semibold mb-4">Agregar Pintura</h2>
           
+          <Button
+            className="bg-black text-white mb-4 hover:bg-black/80"
+            onClick={() => window.location.href = "/pinturas/calculadora"}
+          >
+            Abrir Calculadora de Consumo
+          </Button>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Marca</Label>
@@ -203,7 +212,7 @@ export default function PinturasPage() {
                 required
               />
             </div>
-
+                
             <div>
               <Label>Stock Actual</Label>
               <Input
@@ -218,6 +227,7 @@ export default function PinturasPage() {
             </div>
 
             <Button type="submit">Agregar Pintura</Button>
+
           </form>
         </div>
 

@@ -13,8 +13,15 @@ export async function GET() {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    await jwtVerify(token, SECRET);
-    return NextResponse.json({ ok: true });
+    const { payload } = await jwtVerify(token, SECRET);
+    
+    // Devolver los datos del JWT (id_usuario, email, grupos, etc.)
+    return NextResponse.json({
+      id_usuario: payload.id_usuario,
+      email: payload.email,
+      grupos: payload.grupos || [],
+      idAuditoria: payload.idAuditoria
+    });
   } catch {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }

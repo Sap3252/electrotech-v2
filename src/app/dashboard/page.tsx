@@ -7,9 +7,16 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+type UserSession = {
+  id_usuario: number;
+  email: string;
+  grupos: string[];
+  idAuditoria: number;
+};
+
 export default function Dashboard() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Verificar sesión con el servidor
@@ -49,6 +56,11 @@ export default function Dashboard() {
   // Si todavía no se cargó sesión → no mostrar nada
   if (loading || !session) return null;
 
+  // Funciones para verificar acceso por grupo
+  const hasAccess = (gruposRequeridos: string[]) => {
+    return gruposRequeridos.some(g => session.grupos.includes(g));
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 p-10">
       <h1 className="text-3xl font-bold mb-6">Panel Principal — ElectroTech</h1>
@@ -78,9 +90,19 @@ export default function Dashboard() {
                 >
                   Gestionar Pinturas
                 </Button>
+
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/piezas-pintadas")}
+                >
+                  Registrar Piezas Pintadas
+               </Button>
+                
               </div>
             </CardContent>
           </Card>
+
+
 
         {/* ---------------------- CORE 2 ---------------------- */}
         <Card

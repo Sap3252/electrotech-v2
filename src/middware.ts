@@ -18,6 +18,7 @@ export async function middleware(req: Request) {
   const CORE_ROUTES: Record<string, number> = {
     "/piezas": 1,
     "/pinturas": 1,
+    "/piezas-pintadas": 1,
     "/facturacion": 2,
     "/remitos": 2,
     "/maquinarias": 3,
