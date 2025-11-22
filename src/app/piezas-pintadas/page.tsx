@@ -117,9 +117,12 @@ export default function PiezasPintadasPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         console.error("Error al registrar lote:", data);
-        alert("Error al registrar piezas pintadas.");
+        setMensajeError(data.error || "Error al registrar piezas pintadas.");
         return;
       }
+
+      const resultado = await res.json();
+      alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg`);
 
       // Recargar tabla
       const lotesRes = await fetch("/api/piezas-pintadas");

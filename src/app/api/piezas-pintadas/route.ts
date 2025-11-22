@@ -101,7 +101,28 @@ export async function POST(req: Request) {
     
     const consumo_total_kg = consumo_por_pieza * cantidad;
 
-    // 4) Insertar registro
+    // 4) Verificar stock de pintura disponible
+    const [pinturaRows]: any = await pool.query(
+      "SELECT cantidad_kg FROM Pintura WHERE id_pintura = ?",
+      [id_pintura]
+    );
+
+    if (!pinturaRows[0]) {
+      return NextResponse.json({ error: "Pintura no encontrada" }, { status: 404 });
+    }
+
+    const pinturaDisponible = Number(pinturaRows[0].cantidad_kg);
+
+    if (pinturaDisponible < consumo_total_kg) {
+      return NextResponse.json(
+        {
+          error: `No hay suficiente pintura disponible. Disponible: ${pinturaDisponible.toFixed(2)} kg, Necesario: ${consumo_total_kg.toFixed(2)} kg`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5) Insertar registro y descontar pintura del stock
     await pool.query(
       `
       INSERT INTO PiezaPintada (id_pieza, id_pintura, cantidad, consumo_estimado_kg, fecha)
@@ -110,10 +131,21 @@ export async function POST(req: Request) {
       [id_pieza, id_pintura, cantidad, consumo_total_kg]
     );
 
+    // 6) Descontar la pintura consumida del stock
+    await pool.query(
+      `
+      UPDATE Pintura
+      SET cantidad_kg = cantidad_kg - ?
+      WHERE id_pintura = ?
+      `,
+      [consumo_total_kg, id_pintura]
+    );
+
     return NextResponse.json({ 
       ok: true, 
       consumo_por_pieza_kg: consumo_por_pieza.toFixed(4),
-      consumo_total_kg: consumo_total_kg.toFixed(4)
+      consumo_total_kg: consumo_total_kg.toFixed(4),
+      stock_restante_kg: (pinturaDisponible - consumo_total_kg).toFixed(2)
     });
   } catch (error) {
     console.error("Error POST pieza pintada:", error);
