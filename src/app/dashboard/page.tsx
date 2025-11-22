@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -63,7 +64,16 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-100 p-10">
-      <h1 className="text-3xl font-bold mb-6">Panel Principal — ElectroTech</h1>
+      <div className="flex flex-col items-center mb-8">
+        <Image
+          src="/electrotech logo nombre.png"
+          alt="ElectroTech Logo"
+          width={300}
+          height={100}
+          priority
+        />
+        <h1 className="text-3xl font-bold mt-4">Panel Principal</h1>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -127,7 +137,7 @@ export default function Dashboard() {
 
                 <Button
                   className="bg-black text-white hover:bg-black/80"
-                  onClick={() => router.push("/facturas")}
+                  onClick={() => router.push("/facturacion")}
                 >
                   Gestionar Facturas
                 </Button>

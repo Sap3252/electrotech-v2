@@ -78,8 +78,8 @@ export async function GET(
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename=remito_${remitoId}.pdf`,
-      }
+        "Content-Disposition": `inline; filename="remito-${remitoId}.pdf"`,
+      },
     });
 
   } catch (error) {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // 🟦 COMPOSITE (tu patrón)
 import {
@@ -76,8 +77,17 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
       <Card className="w-full max-w-md shadow-lg border border-slate-200">
         <CardHeader>
-          <CardTitle className="text-center text-xl font-semibold">
-            ElectroTech — Iniciar Sesión
+          <div className="flex justify-center">
+            <Image
+              src="/electrotech logo nombre.png"
+              alt="ElectroTech Logo"
+              width={150}
+              height={50}
+              priority
+            />
+          </div>
+          <CardTitle className="text-center text-xl font-semibold mt-2">
+            Iniciar Sesión
           </CardTitle>
         </CardHeader>
 
