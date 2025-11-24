@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/select";
 
 export default function PiezasPage() {
+  const router = useRouter();
   const [piezas, setPiezas] = useState<any[]>([]);
   const [form, setForm] = useState({
     id_cliente: "",
@@ -85,6 +87,14 @@ export default function PiezasPage() {
 
   return (
     <div className="p-10">
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/dashboard")}
+        >
+          Volver al Dashboard
+        </Button>
+      </div>
 
       {/* FORMULARIO */}
       <Card className="max-w-xl mb-10">

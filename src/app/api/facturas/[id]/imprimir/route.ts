@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import { pool } from "@/lib/db";
 import { getSession, hasCoreAccess } from "@/lib/auth";
+import { RowDataPacket } from "mysql2/promise";
 
 export async function GET(
   req: Request,
@@ -16,7 +17,7 @@ export async function GET(
     const { id: facturaId } = await params;
 
     // Datos de la factura
-    const [facturaData]: any = await pool.query(
+    const [facturaData] = await pool.query<RowDataPacket[]>(
       `
       SELECT f.*, c.nombre as cliente_nombre, c.direccion
       FROM Factura f
@@ -33,7 +34,7 @@ export async function GET(
     const factura = facturaData[0];
 
     // Detalle de la factura
-    const [detalle]: any = await pool.query(
+    const [detalle] = await pool.query<RowDataPacket[]>(
       `
       SELECT 
         fd.cantidad, 
@@ -73,7 +74,7 @@ export async function GET(
     
     let y = 95;
     doc.setFontSize(12);
-    detalle.forEach((item: { descripcion: string; cantidad: number; precio_unitario: number; subtotal: number }) => {
+    detalle.forEach((item) => {
       doc.text(
         `• ${item.descripcion} | Cant: ${item.cantidad} | Precio: $${item.precio_unitario} | Subtotal: $${item.subtotal}`,
         25,

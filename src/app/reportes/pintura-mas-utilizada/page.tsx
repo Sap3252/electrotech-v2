@@ -60,7 +60,7 @@ export default function ReportePinturaMasUtilizada() {
             ) : (
               <div className="space-y-6">
                 {/* Pintura Más Utilizada - Destacada */}
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-8 rounded-lg border-2 border-blue-300">
+                <div className="bg-linear-to-r from-blue-50 to-blue-100 p-8 rounded-lg border-2 border-blue-300">
                   <h3 className="text-2xl font-bold mb-4 text-blue-900">🏆 Pintura con Mayor Consumo</h3>
                   <div className="grid grid-cols-2 gap-6">
                     <div>

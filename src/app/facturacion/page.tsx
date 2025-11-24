@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +16,31 @@ import {
 } from "@/components/ui/select";
 import { ModalDetalleFactura } from "@/components/facturas/ModalDetalleFactura";
 
+interface Cliente {
+  id_cliente: number;
+  nombre: string;
+}
+
+interface PiezaDisponible {
+  id_pieza_pintada: number;
+  descripcion: string;
+  cantidad: number;
+  cantidad_facturada: number;
+}
+
+interface Factura {
+  id_factura: number;
+  cliente_nombre: string;
+  fecha: string;
+  total: number;
+}
+
 export default function FacturacionPage() {
-  const [clientes, setClientes] = useState([]);
-  const [piezas, setPiezas] = useState([]);
-  const [facturas, setFacturas] = useState([]);
-  const [detalleFactura, setDetalleFactura] = useState(null);
+  const router = useRouter();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [piezasFiltradas, setPiezasFiltradas] = useState<PiezaDisponible[]>([]);
+  const [facturas, setFacturas] = useState<Factura[]>([]);
+  const [detalleFactura, setDetalleFactura] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -36,7 +57,7 @@ export default function FacturacionPage() {
     }[]
   >([]);
 
-  const [selectedPieza, setSelectedPieza] = useState<any>(null);
+  const [selectedPieza, setSelectedPieza] = useState<PiezaDisponible | null>(null);
   const [cantidad, setCantidad] = useState(1);
   const [precioUnitario, setPrecioUnitario] = useState(0);
 
@@ -48,9 +69,15 @@ export default function FacturacionPage() {
     if (res.ok) setClientes(await res.json());
   };
 
-  const cargarPiezasDisponibles = async () => {
-    const res = await fetch("/api/piezas-pintadas/disponibles");
-    if (res.ok) setPiezas(await res.json());
+  const cargarPiezasCliente = async (id_cliente: string) => {
+    if (!id_cliente) {
+      setPiezasFiltradas([]);
+      return;
+    }
+    const res = await fetch(`/api/piezas-pintadas/disponibles?id_cliente=${id_cliente}`);
+    if (res.ok) {
+      setPiezasFiltradas(await res.json());
+    }
   };
 
   const cargarFacturas = async () => {
@@ -59,9 +86,20 @@ export default function FacturacionPage() {
   };
 
   useEffect(() => {
-    cargarClientes();
-    cargarPiezasDisponibles();
-    cargarFacturas();
+    let mounted = true;
+    
+    const loadData = async () => {
+      if (mounted) {
+        await cargarClientes();
+        await cargarFacturas();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // ============================
@@ -120,6 +158,9 @@ export default function FacturacionPage() {
       alert("Factura generada correctamente");
       setItems([]);
       setForm({ id_cliente: "" });
+      setSelectedPieza(null);
+      setPiezasFiltradas([]);
+      await cargarFacturas();
     } else {
       alert("Error al generar factura");
     }
@@ -128,6 +169,15 @@ export default function FacturacionPage() {
   return (
     <ProtectedRoute allowedGroups={["Admin", "Contabilidad"]}>
       <div className="min-h-screen bg-slate-100 p-10">
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+          >
+            Volver al Dashboard
+          </Button>
+        </div>
+        
         <h1 className="text-3xl font-bold mb-6">Facturación</h1>
 
         {/* FORMULARIO FACTURA */}
@@ -142,13 +192,18 @@ export default function FacturacionPage() {
               <Label>Cliente</Label>
               <Select
                 value={form.id_cliente}
-                onValueChange={(v) => setForm({ ...form, id_cliente: v })}
+                onValueChange={async (v) => {
+                  setForm({ ...form, id_cliente: v });
+                  setItems([]);
+                  setSelectedPieza(null);
+                  await cargarPiezasCliente(v);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione un cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientes.map((c: any) => (
+                  {clientes.map((c) => (
                     <SelectItem
                       key={c.id_cliente}
                       value={String(c.id_cliente)}
@@ -167,16 +222,18 @@ export default function FacturacionPage() {
               <div>
                 <Label>Pieza Pintada</Label>
                 <Select
+                  value={selectedPieza ? String(selectedPieza.id_pieza_pintada) : ""}
                   onValueChange={(v) => {
-                    const p = piezas.find((x: any) => x.id_pieza_pintada == v);
-                    setSelectedPieza(p);
+                    const p = piezasFiltradas.find((x) => x.id_pieza_pintada == Number(v));
+                    setSelectedPieza(p || null);
                   }}
+                  disabled={!form.id_cliente}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccione pieza" />
+                    <SelectValue placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {piezas.map((p: any) => (
+                    {piezasFiltradas.map((p) => (
                       <SelectItem
                         key={p.id_pieza_pintada}
                         value={String(p.id_pieza_pintada)}
@@ -214,12 +271,12 @@ export default function FacturacionPage() {
             </div>
 
             <Button onClick={agregarItem} className="bg-black text-white">
-              Agregar Ítem
+              Agregar Item
             </Button>
 
             {/* ITEMS LISTADOS */}
             {items.length > 0 && (
-              <div className="bg-slate-50 p-4 rounded border">
+              <div className="bg-slate-50 p-4 rounded border mt-6">
                 <h3 className="font-semibold mb-3">Detalle de factura:</h3>
 
                 <ul className="space-y-2">
@@ -237,12 +294,14 @@ export default function FacturacionPage() {
               </div>
             )}
 
-            <Button
-              onClick={guardarFactura}
-              className="bg-green-600 text-white"
-            >
-              Generar Factura
-            </Button>
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={guardarFactura}
+                className="bg-green-600 text-white"
+              >
+                Generar Factura
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -264,7 +323,7 @@ export default function FacturacionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {facturas.map((f: any) => (
+                  {facturas.map((f) => (
                     <tr key={f.id_factura} className="border-b">
                       <td className="p-2">{f.id_factura}</td>
                       <td className="p-2">{f.cliente_nombre}</td>

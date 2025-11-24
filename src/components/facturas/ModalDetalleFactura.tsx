@@ -4,13 +4,20 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
 
+interface DetalleItem {
+  descripcion: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
 export function ModalDetalleFactura({ facturaId, open, onOpenChange }: {
   facturaId: number | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
 
-  const [detalle, setDetalle] = useState<any[]>([]);
+  const [detalle, setDetalle] = useState<DetalleItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -49,7 +56,7 @@ export function ModalDetalleFactura({ facturaId, open, onOpenChange }: {
                   </tr>
                 </thead>
                 <tbody>
-                  {detalle.map((d: any, idx: number) => (
+                  {detalle.map((d, idx) => (
                     <tr key={idx} className="border-b">
                       <td className="p-2">{d.descripcion}</td>
                       <td className="p-2">{d.cantidad}</td>

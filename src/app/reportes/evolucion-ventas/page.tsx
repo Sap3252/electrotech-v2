@@ -13,9 +13,15 @@ type VentasData = {
   total_ventas: string;
 };
 
+type ChartData = {
+  mes: string;
+  cantidad_facturas: number;
+  total_ventas: number;
+};
+
 export default function ReporteEvolucionVentas() {
   const router = useRouter();
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ChartData[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {

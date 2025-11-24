@@ -28,10 +28,11 @@ export async function POST(req: Request) {
 
     const url = `${process.env.APP_URL || "http://localhost:3000"}/reset-password?token=${token}`;
 
-    console.log("Enviando correo a:", email);
+    console.log("📧 Enviando correo desde:", process.env.SMTP_USER);
+    console.log("📧 Enviando correo a:", email);
     
     const info = await transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: `"ElectroTech" <${process.env.SMTP_USER}>`, // Nombre y email explícitos
       to: email,
       subject: "Recuperar contraseña - ElectroTech",
       html: `
@@ -42,7 +43,9 @@ export async function POST(req: Request) {
       `,
     });
 
-    console.log("Correo enviado:", info.messageId);
+    console.log("✅ Correo enviado exitosamente");
+    console.log("📧 Enviado desde:", info.envelope.from);
+    console.log("📧 Message ID:", info.messageId);
     return NextResponse.json({ ok: true, message: "Correo enviado correctamente" });
   } catch (error) {
     console.error("Error en forgot-password:", error);

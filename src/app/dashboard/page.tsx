@@ -57,10 +57,14 @@ export default function Dashboard() {
   // Si todavía no se cargó sesión → no mostrar nada
   if (loading || !session) return null;
 
+
+  //REVISAR
+  /*
   // Funciones para verificar acceso por grupo
   const hasAccess = (gruposRequeridos: string[]) => {
     return gruposRequeridos.some(g => session.grupos.includes(g));
   };
+  */
 
   return (
     <div className="min-h-screen bg-slate-100 p-10">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 
 export default function PinturasPage() {
+  const router = useRouter();
   const [pinturas, setPinturas] = useState([]);
   const [marcas, setMarcas] = useState([]);
   const [colores, setColores] = useState([]);
@@ -102,6 +104,15 @@ export default function PinturasPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-slate-100 p-10">
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+          >
+            Volver al Dashboard
+          </Button>
+        </div>
+        
         <h1 className="text-3xl font-bold mb-6">Gestión de Pinturas</h1>
 
         <div className="bg-white p-6 rounded-lg shadow mb-6">

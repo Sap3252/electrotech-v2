@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
-export async function GET() {
-  const [rows] = await pool.query("SELECT * FROM Pieza ORDER BY id_pieza DESC");
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const id_cliente = searchParams.get("id_cliente");
+
+  let query = "SELECT * FROM Pieza";
+  const params: any[] = [];
+
+  if (id_cliente) {
+    query += " WHERE id_cliente = ?";
+    params.push(id_cliente);
+  }
+
+  query += " ORDER BY id_pieza DESC";
+
+  const [rows] = await pool.query(query, params);
   return NextResponse.json(rows);
 }
 

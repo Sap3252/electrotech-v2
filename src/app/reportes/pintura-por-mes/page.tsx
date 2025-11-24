@@ -14,9 +14,14 @@ type PinturaMesData = {
   total_kg: string;
 };
 
+type ChartData = {
+  mes: string;
+  [pintura: string]: number | string;
+};
+
 export default function ReportePinturaPorMes() {
   const router = useRouter();
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ChartData[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -30,7 +35,7 @@ export default function ReportePinturaPorMes() {
       .then((res: PinturaMesData[]) => {
         if (Array.isArray(res)) {
           // Agrupar por mes
-          const mesesMap: any = {};
+          const mesesMap: Record<string, ChartData> = {};
           res.forEach(item => {
             if (!mesesMap[item.mes]) {
               mesesMap[item.mes] = { mes: item.mes };

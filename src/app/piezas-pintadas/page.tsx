@@ -17,6 +17,7 @@ type Pieza = {
   detalle: string;
   ancho_m: number;
   alto_m: number;
+  stock_disponible: number;
 };
 
 type Pintura = {
@@ -69,7 +70,7 @@ export default function PiezasPintadasPage() {
     const cargar = async () => {
       try {
         const [piezasRes, pinturasRes, lotesRes] = await Promise.all([
-          fetch("/api/piezas"),
+          fetch("/api/piezas/disponibles"),
           fetch("/api/pinturas"),
           fetch("/api/piezas-pintadas"),
         ]);
@@ -124,12 +125,19 @@ export default function PiezasPintadasPage() {
       const resultado = await res.json();
       alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg`);
 
-      // Recargar tabla
-      const lotesRes = await fetch("/api/piezas-pintadas");
+      // Recargar tabla y piezas disponibles
+      const [lotesRes, piezasRes] = await Promise.all([
+        fetch("/api/piezas-pintadas"),
+        fetch("/api/piezas/disponibles"),
+      ]);
       setLotes(await lotesRes.json());
+      setPiezas(await piezasRes.json());
 
-      // Resetear solo cantidad
+      // Resetear formulario
       setCantidad(1);
+      setPiezaSeleccionada("");
+      setIdPieza("");
+      setStockInfo(null);
     } catch (err) {
       console.error("Error al registrar lote:", err);
       alert("Error al registrar piezas pintadas.");
@@ -143,7 +151,7 @@ export default function PiezasPintadasPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Registrar Piezas Pintadas</h1>
         <Button variant="outline" onClick={() => router.push("/dashboard")}>
-          Volver al Panel
+          Volver al Dashboard
         </Button>
       </div>
 
@@ -183,11 +191,17 @@ export default function PiezasPintadasPage() {
                   <SelectValue placeholder="-- Seleccionar pieza --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {piezas.map((p) => (
-                    <SelectItem key={p.id_pieza} value={String(p.id_pieza)}>
-                      {p.id_pieza} — {p.detalle} ({p.ancho_m}m x {p.alto_m}m)
+                  {piezas.length === 0 ? (
+                    <SelectItem value="0" disabled>
+                      No hay piezas con stock disponible
                     </SelectItem>
-                  ))}
+                  ) : (
+                    piezas.map((p) => (
+                      <SelectItem key={p.id_pieza} value={String(p.id_pieza)}>
+                        {p.detalle} ({p.ancho_m}m x {p.alto_m}m) - Stock: {p.stock_disponible}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               

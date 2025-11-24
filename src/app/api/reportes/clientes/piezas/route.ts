@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasCoreAccess } from "@/lib/auth";
+import { RowDataPacket } from "mysql2/promise";
 
 export async function GET() {
   const session = await getSession();
@@ -11,7 +12,7 @@ export async function GET() {
   }
 
   try {
-    const [rows]: any = await pool.query(`
+    const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT 
         c.nombre AS cliente,
         SUM(fd.cantidad) AS piezas_totales,

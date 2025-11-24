@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +20,10 @@ import { ModalDetalleRemito } from "@/components/remitos/ModalDetalleRemito";
 
 
 export default function RemitosPage() {
+  const router = useRouter();
   const [clientes, setClientes] = useState<any[]>([]);
   const [piezas, setPiezas] = useState<any[]>([]);
+  const [piezasFiltradas, setPiezasFiltradas] = useState<any[]>([]);
   const [remitos, setRemitos] = useState<any[]>([]);
 
   const [form, setForm] = useState({
@@ -46,6 +49,17 @@ export default function RemitosPage() {
   const cargarPiezas = async () => {
     const res = await fetch("/api/piezas");
     if (res.ok) setPiezas(await res.json());
+  };
+
+  const cargarPiezasCliente = async (id_cliente: string) => {
+    if (!id_cliente) {
+      setPiezasFiltradas([]);
+      return;
+    }
+    const res = await fetch(`/api/piezas?id_cliente=${id_cliente}`);
+    if (res.ok) {
+      setPiezasFiltradas(await res.json());
+    }
   };
 
   const cargarRemitos = async () => {
@@ -104,6 +118,15 @@ export default function RemitosPage() {
   return (
     <ProtectedRoute allowedGroups={["Contabilidad", "Admin"]}>
       <div className="min-h-screen bg-slate-100 p-10">
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+          >
+            Volver al Dashboard
+          </Button>
+        </div>
+        
         <h1 className="text-3xl font-bold mb-6">Gestión de Remitos</h1>
 
         {/* ================================
@@ -121,9 +144,11 @@ export default function RemitosPage() {
                 <Label>Cliente</Label>
                 <Select
                   value={form.id_cliente}
-                  onValueChange={(v) =>
-                    setForm({ ...form, id_cliente: v })
-                  }
+                  onValueChange={async (v) => {
+                    setForm({ ...form, id_cliente: v });
+                    setDetalle([]);
+                    await cargarPiezasCliente(v);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione cliente" />
@@ -159,12 +184,16 @@ export default function RemitosPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
               {/* Seleccionar pieza */}
-              <Select onValueChange={(v) => setPiezaSeleccionada(v)}>
+              <Select 
+                value={piezaSeleccionada}
+                onValueChange={(v) => setPiezaSeleccionada(v)}
+                disabled={!form.id_cliente}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione pieza" />
+                  <SelectValue placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {piezas.map((p: any) => (
+                  {piezasFiltradas.map((p: any) => (
                     <SelectItem
                       key={p.id_pieza}
                       value={String(p.id_pieza)}
@@ -186,7 +215,7 @@ export default function RemitosPage() {
                 <Button
                     className="bg-black text-white"
                     onClick={() => {
-                        const p = piezas.find((x: any) => String(x.id_pieza) === piezaSeleccionada);
+                        const p = piezasFiltradas.find((x: any) => String(x.id_pieza) === piezaSeleccionada);
                         if (!p || !cantidad) return;
 
                         setDetalle((prev) => [
