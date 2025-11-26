@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 2)) {
+
+  // Verificar acceso al componente Botón Imprimir PDF (ID 13)
+  if (!session || !(await hasPermission(session, 13))) {
     return new NextResponse("Acceso no autorizado", { status: 403 });
   }
 

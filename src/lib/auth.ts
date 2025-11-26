@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import { pool } from "./db"; // 👈 NUEVO
+import { pool } from "./db";
 
 const SECRET = process.env.JWT_SECRET!;
 
@@ -18,9 +18,10 @@ export async function setSession(token: string) {
   const cookieStore = await cookies();
   cookieStore.set("session", token, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    maxAge: 60 * 60 * 8, // 8 horas (igual que el token JWT)
   });
 }
 
@@ -75,19 +76,124 @@ export async function getSession(): Promise<SessionData | null> {
 }
 
 // ===========================
-//  PERMISOS POR CORE
+//  VERIFICAR PERTENENCIA A GRUPO
 // ===========================
 
-const CORE_ACCESS: Record<number, string[]> = {
-  1: ["Admin", "Admisión y Control"],          // Core 1 – Piezas & Pinturas
-  2: ["Admin", "Contabilidad"],     // Core 2 – Facturación / Remitos 
-  3: ["Admin", "Operario"],                    // Core 3 – Maquinaria
-  4: ["Admin", "Recursos Humanos"],            // Core 4 – Empleados
-  5: ["Admin", "Gerente"],                     // Core 5 – Reportes
-};
-
-export function hasCoreAccess(session: SessionData | null, core: number): boolean {
+export function hasGroup(session: SessionData | null, groupName: string): boolean {
   if (!session) return false;
-  const allowed = CORE_ACCESS[core] ?? [];
-  return session.grupos.some((g) => allowed.includes(g));
+  return session.grupos.includes(groupName);
+}
+
+// ===========================
+//  VERIFICAR SI ES ADMINISTRADOR
+// ===========================
+
+export function isAdmin(session: SessionData | null): boolean {
+  return hasGroup(session, "Admin");
+}
+
+// ===========================
+//  VERIFICAR PERMISO A COMPONENTE (RBAC)
+// ===========================
+
+export async function hasPermission(
+  session: SessionData | null,
+  componenteId: number
+): Promise<boolean> {
+  if (!session) return false;
+  
+  // Admin siempre tiene acceso
+  if (isAdmin(session)) return true;
+
+  try {
+    // Verificar si alguno de los grupos del usuario tiene acceso al componente
+    const [rows]: any = await pool.query(
+      `SELECT COUNT(*) as count
+       FROM GrupoComponente gc
+       JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
+       WHERE gu.id_usuario = ? AND gc.id_componente = ?`,
+      [session.id_usuario, componenteId]
+    );
+
+    return rows[0].count > 0;
+  } catch (error) {
+    console.error("Error verificando permiso:", error);
+    return false;
+  }
+}
+
+// ===========================
+//  VERIFICAR PERMISO A FORMULARIO (RBAC)
+// ===========================
+
+export async function hasFormularioAccess(
+  session: SessionData | null,
+  formularioRuta: string
+): Promise<boolean> {
+  if (!session) return false;
+  
+  // Admin siempre tiene acceso
+  if (isAdmin(session)) {
+    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} es Admin - Acceso permitido a ${formularioRuta}`);
+    return true;
+  }
+
+  try {
+    // Verificar si el usuario tiene acceso a algún componente del formulario
+    const [rows]: any = await pool.query(
+      `SELECT COUNT(DISTINCT gc.id_componente) as count
+       FROM GrupoComponente gc
+       JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
+       JOIN Componente c ON c.id_componente = gc.id_componente
+       JOIN Formulario f ON f.id_formulario = c.id_formulario
+       WHERE gu.id_usuario = ? AND f.ruta = ?`,
+      [session.id_usuario, formularioRuta]
+    );
+
+    const tieneAcceso = rows[0].count > 0;
+    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} (${session.grupos.join(',')}) - Ruta: ${formularioRuta} - Componentes: ${rows[0].count} - Acceso: ${tieneAcceso}`);
+    
+    return tieneAcceso;
+  } catch (error) {
+    console.error("Error verificando acceso a formulario:", error);
+    return false;
+  }
+}
+
+// ===========================
+//  OBTENER FORMULARIOS ACCESIBLES
+// ===========================
+
+export async function getAccesibleFormularios(
+  session: SessionData | null
+): Promise<any[]> {
+  if (!session) return [];
+
+  try {
+    const [formularios]: any = await pool.query(
+      `SELECT DISTINCT 
+         m.id_modulo,
+         m.nombre as modulo,
+         m.icono as modulo_icono,
+         m.orden as modulo_orden,
+         f.id_formulario,
+         f.nombre as formulario,
+         f.ruta,
+         f.descripcion,
+         f.orden as formulario_orden
+       FROM GrupoComponente gc
+       JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
+       JOIN Componente c ON c.id_componente = gc.id_componente
+       JOIN Formulario f ON f.id_formulario = c.id_formulario
+       JOIN Modulo m ON m.id_modulo = f.id_modulo
+       WHERE gu.id_usuario = ? AND f.activo = TRUE AND m.activo = TRUE
+       ORDER BY m.orden, f.orden`,
+      [session.id_usuario]
+    );
+
+    return formularios;
+  } catch (error) {
+    console.error("Error obteniendo formularios accesibles:", error);
+    return [];
+  }
 }

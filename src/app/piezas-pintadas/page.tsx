@@ -11,6 +11,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import ProtectedPage from "@/components/ProtectedPage";
+import ProtectedComponent from "@/components/ProtectedComponent";
 
 type Pieza = {
   id_pieza: number;
@@ -40,7 +42,15 @@ type PiezaPintadaRow = {
   tipo: string;
 };
 
-export default function PiezasPintadasPage() {
+export default function PiezasPintadasPageProtected() {
+  return (
+    <ProtectedPage ruta="/piezas-pintadas">
+      <PiezasPintadasPage />
+    </ProtectedPage>
+  );
+}
+
+function PiezasPintadasPage() {
   const router = useRouter();
 
   const [piezas, setPiezas] = useState<Pieza[]>([]);
@@ -157,11 +167,12 @@ export default function PiezasPintadasPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* FORMULARIO */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Nueva producción</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <ProtectedComponent componenteId={8}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Nueva producción</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
             {/* PIEZA */}
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -319,12 +330,14 @@ export default function PiezasPintadasPage() {
             </div>
           </CardContent>
         </Card>
+        </ProtectedComponent>
 
         {/* LISTA DE LOTES */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Historial de producción</CardTitle>
-          </CardHeader>
+        <ProtectedComponent componenteId={9}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de producción</CardTitle>
+            </CardHeader>
           <CardContent>
             {lotes.length === 0 ? (
               <p className="text-sm text-slate-500">
@@ -362,7 +375,9 @@ export default function PiezasPintadasPage() {
             )}
           </CardContent>
         </Card>
+        </ProtectedComponent>
       </div>
     </div>
   );
 }
+

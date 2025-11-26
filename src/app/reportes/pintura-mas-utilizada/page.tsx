@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
 
 type PinturaData = {
   id_pintura: number;
@@ -14,7 +14,7 @@ type PinturaData = {
   total_consumido: number;
 };
 
-export default function ReportePinturaMasUtilizada() {
+function ReportePinturaMasUtilizada() {
   const router = useRouter();
   const [data, setData] = useState<PinturaData[]>([]);
   const [error, setError] = useState("");
@@ -45,7 +45,6 @@ export default function ReportePinturaMasUtilizada() {
   const otrasUtilizadas = data.slice(1);
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Gerente"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <Card className="p-6">
           <CardHeader>
@@ -124,7 +123,14 @@ export default function ReportePinturaMasUtilizada() {
           </Button>
         </div>
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function ReportePinturaMasUtilizadaProtected() {
+  return (
+    <ProtectedPage ruta="/reportes/pintura-mas-utilizada">
+      <ReportePinturaMasUtilizada />
+    </ProtectedPage>
   );
 }
 

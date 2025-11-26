@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 // =====================
 // GET - Obtener pinturas
 // =====================
 export async function GET() {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Tabla Listado Pinturas (ID 6)
+  if (!session || !(await hasPermission(session, 6))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
@@ -45,7 +47,9 @@ export async function GET() {
 // =====================
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Formulario Nueva Pintura (ID 5)
+  if (!session || !(await hasPermission(session, 5))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

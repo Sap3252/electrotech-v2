@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 import { RowDataPacket } from "mysql2/promise";
 
 export async function GET(req: Request) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 2)) {
+
+  // Verificar acceso al componente Tabla Historial Producción (ID 9)
+  if (!session || !(await hasPermission(session, 9))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

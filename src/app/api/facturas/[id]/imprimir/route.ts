@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 import { RowDataPacket } from "mysql2/promise";
 
 export async function GET(
@@ -9,7 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 2)) {
+
+  // Verificar acceso al componente Botón Imprimir Factura (ID 17)
+  if (!session || !(await hasPermission(session, 17))) {
     return new NextResponse("Acceso no autorizado", { status: 403 });
   }
 

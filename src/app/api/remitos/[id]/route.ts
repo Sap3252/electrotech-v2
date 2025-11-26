@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 2)) {
+  
+  // Verificar acceso al componente Ver Detalle de remitos (ID 12)
+  if (!session || !(await hasPermission(session, 12))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
+
+  const { id } = await params;
 
   try {
     const [rows] = await pool.query(
@@ -19,7 +23,7 @@ export async function GET(
       JOIN Cliente c ON c.id_cliente = r.id_cliente
       WHERE r.id_remito = ?
       `,
-      [params.id]
+      [id]
     );
 
     if ((rows as any[]).length === 0) {

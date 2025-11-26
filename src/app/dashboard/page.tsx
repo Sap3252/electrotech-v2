@@ -45,15 +45,6 @@ export default function Dashboard() {
     checkAuth();
   }, [router]);
 
-  // Registro de logout al cerrar pestaña
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      navigator.sendBeacon("/api/auth/logout");
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
   // Si todavía no se cargó sesión → no mostrar nada
   if (loading || !session) return null;
 
@@ -184,7 +175,16 @@ export default function Dashboard() {
           </Card>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 flex gap-4 flex-wrap">
+        {session.grupos.includes("Admin") && (
+          <Button
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => router.push("/dashboard/admin")}
+          >
+            Panel de Administración
+          </Button>
+        )}
+        
         <Button
           variant="destructive"
           onClick={async () => {

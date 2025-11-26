@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 export async function GET(req: Request) {
   const session = await getSession();
 
-  if (!hasCoreAccess(session, 5)) {
+  // Verificar acceso al componente Ventas Cliente Específico (ID 27 - crear)
+  if (!session || !(await hasPermission(session, 27))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { getSession, hasPermission } from "@/lib/auth";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSession();
+  
+  // Verificar acceso al componente Ver Detalle de facturas (ID 16)
+  if (!session || !(await hasPermission(session, 16))) {
+    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+  }
+
   const { id } = await params;
   
   try {

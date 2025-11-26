@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1))
+
+  // Verificar acceso al componente Ver Detalle Pieza Pintada (ID 9 - tabla)
+  if (!session || !(await hasPermission(session, 9)))
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
 
   const id = Number(params.id);
@@ -27,7 +29,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1))
+
+  // Verificar acceso al componente Editar Pieza Pintada (ID 8 - formulario)
+  if (!session || !(await hasPermission(session, 8)))
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
 
   const id = Number(params.id);
@@ -55,7 +59,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1))
+
+  // Verificar acceso al componente Eliminar Pieza Pintada (ID 23 - crear)
+  if (!session || !(await hasPermission(session, 23)))
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
 
   const id = Number(params.id);

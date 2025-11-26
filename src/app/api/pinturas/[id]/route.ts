@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 // =======================
 // GET por ID
 // =======================
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Ver Detalle Pintura (ID 23 - crear si no existe)
+  if (!session || !(await hasPermission(session, 6))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
   try {
+    const { id } = await params;
     const [rows]: any = await pool.query(
       `
       SELECT 
@@ -36,7 +39,7 @@ export async function GET(
       JOIN Proveedor pr ON pr.id_proveedor = p.id_proveedor
       WHERE p.id_pintura = ?
       `,
-      [params.id]
+      [id]
     );
 
     if (rows.length === 0) {
@@ -56,14 +59,17 @@ export async function GET(
 // =======================
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Editar Pintura (ID 24 - crear si no existe)
+  if (!session || !(await hasPermission(session, 24))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
   try {
+    const { id } = await params;
     const {
       id_marca,
       id_tipo,
@@ -91,7 +97,7 @@ export async function PUT(
         id_proveedor,
         cantidad_kg,
         precio_unitario,
-        params.id
+        id
       ]
     );
 
@@ -108,15 +114,19 @@ export async function PUT(
 // =======================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Botón Eliminar Pintura (ID 7)
+  if (!session || !(await hasPermission(session, 7))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
+  const { id } = await params;
+
   try {
-    await pool.query("DELETE FROM Pintura WHERE id_pintura = ?", [params.id]);
+    await pool.query("DELETE FROM Pintura WHERE id_pintura = ?", [id]);
     return NextResponse.json({ ok: true });
 
   } catch (error) {

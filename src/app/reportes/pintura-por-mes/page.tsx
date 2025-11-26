@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
 
 type PinturaMesData = {
   id_pintura: number;
@@ -19,7 +19,7 @@ type ChartData = {
   [pintura: string]: number | string;
 };
 
-export default function ReportePinturaPorMes() {
+function ReportePinturaPorMes() {
   const router = useRouter();
   const [data, setData] = useState<ChartData[]>([]);
   const [error, setError] = useState("");
@@ -52,7 +52,6 @@ export default function ReportePinturaPorMes() {
   }, []);
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Gerente"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <Card className="p-6">
           <CardHeader>
@@ -96,6 +95,13 @@ export default function ReportePinturaPorMes() {
           </Button>
         </div>
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function ReportePinturaPorMesProtected() {
+  return (
+    <ProtectedPage ruta="/reportes/pintura-por-mes">
+      <ReportePinturaPorMes />
+    </ProtectedPage>
   );
 }

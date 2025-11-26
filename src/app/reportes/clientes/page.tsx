@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
 
 type ClienteData = {
   cliente: string;
@@ -13,7 +13,7 @@ type ClienteData = {
   porcentaje: number;
 };
 
-export default function ReporteClienteTrabajo() {
+function ReporteClienteTrabajo() {
   const router = useRouter();
   const [data, setData] = useState<ClienteData[]>([]);
   const [error, setError] = useState("");
@@ -46,7 +46,6 @@ export default function ReporteClienteTrabajo() {
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#845EC2"];
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Gerente"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <Card className="p-6">
           <CardHeader>
@@ -92,6 +91,13 @@ export default function ReporteClienteTrabajo() {
           </Button>
         </div>
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function ReporteClienteTrabajoProtected() {
+  return (
+    <ProtectedPage ruta="/reportes/clientes">
+      <ReporteClienteTrabajo />
+    </ProtectedPage>
   );
 }

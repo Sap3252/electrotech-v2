@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 
 // -------------------------------------
 // GET: Listar remitos con info del cliente
 // -------------------------------------
 export async function GET() {
   const session = await getSession();
-  if (!hasCoreAccess(session, 2)) {
+  
+  // Verificar acceso al componente de tabla de remitos (ID 11)
+  if (!session || !(await hasPermission(session, 11))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
@@ -35,7 +37,9 @@ export async function GET() {
 // -------------------------------------
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 2)) {
+  
+  // Verificar acceso al componente de formulario de remitos (ID 10)
+  if (!session || !(await hasPermission(session, 10))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

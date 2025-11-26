@@ -12,16 +12,18 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
+import ProtectedComponent from "@/components/ProtectedComponent";
 
 
-export default function PinturasPage() {
+function PinturasPage() {
   const router = useRouter();
   const [pinturas, setPinturas] = useState([]);
   const [marcas, setMarcas] = useState([]);
   const [colores, setColores] = useState([]);
   const [tipos, setTipos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [editId, setEditId] = useState<number | null>(null);
   
   const [form, setForm] = useState({
     id_marca: "",
@@ -81,14 +83,18 @@ export default function PinturasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const res = await fetch("/api/pinturas", {
-      method: "POST",
+    const method = editId ? "PUT" : "POST";
+    const url = editId ? `/api/pinturas/${editId}` : "/api/pinturas";
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
 
     if (res.ok) {
       await cargarPinturas();
+      setEditId(null);
       setForm({
         id_marca: "",
         id_tipo: "",
@@ -99,10 +105,30 @@ export default function PinturasPage() {
       });
     }
   };
+
+  const editarPintura = (pintura: any) => {
+    setEditId(pintura.id_pintura);
+    setForm({
+      id_marca: String(pintura.id_marca),
+      id_tipo: String(pintura.id_tipo),
+      id_color: String(pintura.id_color),
+      id_proveedor: String(pintura.id_proveedor),
+      precio_unitario: String(pintura.precio_unitario),
+      cantidad_kg: String(pintura.cantidad_kg),
+    });
+  };
+
+  const eliminarPintura = async (id: number) => {
+    if (!confirm("¿Está seguro de eliminar esta pintura?")) return;
+
+    const res = await fetch(`/api/pinturas/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      await cargarPinturas();
+    }
+  };
   
 
   return (
-    <ProtectedRoute>
       <div className="min-h-screen bg-slate-100 p-10">
         <div className="flex justify-end mb-4">
           <Button
@@ -115,17 +141,18 @@ export default function PinturasPage() {
         
         <h1 className="text-3xl font-bold mb-6">Gestión de Pinturas</h1>
 
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-xl font-semibold mb-4">Agregar Pintura</h2>
+        <ProtectedComponent componenteId={5}>
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 className="text-xl font-semibold mb-4">{editId ? "Editar Pintura" : "Agregar Pintura"}</h2>
           
-          <Button
-            className="bg-black text-white mb-4 hover:bg-black/80"
-            onClick={() => window.location.href = "/pinturas/calculadora"}
-          >
-            Abrir Calculadora de Consumo
-          </Button>
+            <Button
+              className="bg-black text-white mb-4 hover:bg-black/80"
+              onClick={() => window.location.href = "/pinturas/calculadora"}
+            >
+              Abrir Calculadora de Consumo
+            </Button>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Marca</Label>
               <Select
@@ -238,15 +265,38 @@ export default function PinturasPage() {
               />
             </div>
 
-            <Button type="submit">Agregar Pintura</Button>
+            <div className="flex gap-2">
+              <Button type="submit">{editId ? "Actualizar" : "Agregar"} Pintura</Button>
+              {editId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditId(null);
+                    setForm({
+                      id_marca: "",
+                      id_tipo: "",
+                      id_color: "",
+                      id_proveedor: "",
+                      precio_unitario: "",
+                      cantidad_kg: "",
+                    });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
+            </div>
 
           </form>
         </div>
+        </ProtectedComponent>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Pinturas Registradas</h2>
+        <ProtectedComponent componenteId={6}>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">Pinturas Registradas</h2>
           
-          <div className="overflow-x-auto">
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b">
@@ -257,6 +307,7 @@ export default function PinturasPage() {
                   <th className="text-left p-2">Proveedor</th>
                   <th className="text-left p-2">Precio</th>
                   <th className="text-left p-2">Cantidad (kg)</th>
+                  <th className="text-left p-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,14 +320,43 @@ export default function PinturasPage() {
                     <td className="p-2">{p.proveedor || p.id_proveedor}</td>
                     <td className="p-2">${p.precio_unitario}</td>
                     <td className="p-2">{p.cantidad_kg} kg</td>
+                    <td className="p-2">
+                      <div className="flex gap-2">
+                        <ProtectedComponent componenteId={24}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => editarPintura(p)}
+                          >
+                            Editar
+                          </Button>
+                        </ProtectedComponent>
+                        <ProtectedComponent componenteId={7}>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => eliminarPintura(p.id_pintura)}
+                          >
+                            Eliminar
+                          </Button>
+                        </ProtectedComponent>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+        </ProtectedComponent>
       </div>
-    </ProtectedRoute>
   );
 }
 
+export default function PinturasPageProtected() {
+  return (
+    <ProtectedPage ruta="/pinturas">
+      <PinturasPage />
+    </ProtectedPage>
+  );
+}

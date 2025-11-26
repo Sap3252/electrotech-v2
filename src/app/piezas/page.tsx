@@ -12,8 +12,10 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import ProtectedPage from "@/components/ProtectedPage";
+import ProtectedComponent from "@/components/ProtectedComponent";
 
-export default function PiezasPage() {
+function PiezasPage() {
   const router = useRouter();
   const [piezas, setPiezas] = useState<any[]>([]);
   const [form, setForm] = useState({
@@ -97,15 +99,16 @@ export default function PiezasPage() {
       </div>
 
       {/* FORMULARIO */}
-      <Card className="max-w-xl mb-10">
-        <CardHeader>
-          <CardTitle>
-            {editId ? "Editar Pieza" : "Agregar Nueva Pieza"}
-          </CardTitle>
-        </CardHeader>
+      <ProtectedComponent componenteId={1}>
+        <Card className="max-w-xl mb-10">
+          <CardHeader>
+            <CardTitle>
+              {editId ? "Editar Pieza" : "Agregar Nueva Pieza"}
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={crearPieza}>
+          <CardContent>
+            <form className="flex flex-col gap-4" onSubmit={crearPieza}>
             <Select
             onValueChange={(value) =>
                 setForm({ ...form, id_cliente: value })
@@ -157,16 +160,18 @@ export default function PiezasPage() {
           </form>
         </CardContent>
       </Card>
+      </ProtectedComponent>
 
       {/* LISTADO */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Listado de Piezas</CardTitle>
-        </CardHeader>
+      <ProtectedComponent componenteId={2}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Listado de Piezas</CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <table className="w-full border text-left">
-            <thead>
+          <CardContent>
+            <table className="w-full border text-left">
+              <thead>
               <tr className="border-b">
                 <th>ID</th>
                 <th>Cliente</th>
@@ -187,27 +192,31 @@ export default function PiezasPage() {
                   <td>{p.detalle}</td>
 
                   <td className="flex gap-2 py-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setEditId(p.id_pieza);
-                        setForm({
-                          id_cliente: p.id_cliente,
-                          ancho_m: p.ancho_m,
-                          alto_m: p.alto_m,
-                          detalle: p.detalle,
-                        });
-                      }}
-                    >
-                      Editar
-                    </Button>
+                    <ProtectedComponent componenteId={3}>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setEditId(p.id_pieza);
+                          setForm({
+                            id_cliente: p.id_cliente,
+                            ancho_m: p.ancho_m,
+                            alto_m: p.alto_m,
+                            detalle: p.detalle,
+                          });
+                        }}
+                      >
+                        Editar
+                      </Button>
+                    </ProtectedComponent>
 
-                    <Button
-                      variant="destructive"
-                      onClick={() => eliminarPieza(p.id_pieza)}
-                    >
-                      Eliminar
-                    </Button>
+                    <ProtectedComponent componenteId={4}>
+                      <Button
+                        variant="destructive"
+                        onClick={() => eliminarPieza(p.id_pieza)}
+                      >
+                        Eliminar
+                      </Button>
+                    </ProtectedComponent>
                   </td>
                 </tr>
               ))}
@@ -215,7 +224,18 @@ export default function PiezasPage() {
           </table>
         </CardContent>
       </Card>
+      </ProtectedComponent>
 
     </div>
   );
 }
+
+function PiezasPageProtected() {
+  return (
+    <ProtectedPage ruta="/piezas">
+      <PiezasPage />
+    </ProtectedPage>
+  );
+}
+
+export default PiezasPageProtected;

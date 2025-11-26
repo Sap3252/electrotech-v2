@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 import { RowDataPacket } from "mysql2/promise";
 
 export async function GET() {
   const session = await getSession();
 
-  // Sólo Gerente y Admin ven reportes
-  if (!hasCoreAccess(session, 5)) {
+  // Verificar acceso al componente Participación Clientes (ID 18)
+  if (!session || !(await hasPermission(session, 18))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

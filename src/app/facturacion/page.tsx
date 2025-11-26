@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
+import ProtectedComponent from "@/components/ProtectedComponent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -35,7 +36,7 @@ interface Factura {
   total: number;
 }
 
-export default function FacturacionPage() {
+function FacturacionPage() {
   const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [piezasFiltradas, setPiezasFiltradas] = useState<PiezaDisponible[]>([]);
@@ -167,7 +168,6 @@ export default function FacturacionPage() {
   };
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Contabilidad"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <div className="flex justify-end mb-4">
           <Button
@@ -181,10 +181,11 @@ export default function FacturacionPage() {
         <h1 className="text-3xl font-bold mb-6">Facturación</h1>
 
         {/* FORMULARIO FACTURA */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Generar Factura</CardTitle>
-          </CardHeader>
+        <ProtectedComponent componenteId={14}>
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Generar Factura</CardTitle>
+            </CardHeader>
           <CardContent className="space-y-6">
 
             {/* CLIENTE */}
@@ -304,9 +305,11 @@ export default function FacturacionPage() {
             </div>
           </CardContent>
         </Card>
+        </ProtectedComponent>
 
         {/* TABLA DE FACTURAS */}
-        <Card className="mt-10">
+        <ProtectedComponent componenteId={15}>
+          <Card className="mt-10">
           <CardHeader>
             <CardTitle>Facturas Registradas</CardTitle>
           </CardHeader>
@@ -330,16 +333,18 @@ export default function FacturacionPage() {
                       <td className="p-2">{f.fecha}</td>
                       <td className="p-2">${f.total}</td>
                       <td className="p-2">
-                        <Button
-                          className="bg-blue-600 text-white hover:bg-blue-700"
-                          size="sm"
-                          onClick={() => {
-                            setDetalleFactura(f.id_factura);
-                            setModalOpen(true);
-                          }}
-                        >
+                        <ProtectedComponent componenteId={16}>
+                          <Button
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            size="sm"
+                            onClick={() => {
+                              setDetalleFactura(f.id_factura);
+                              setModalOpen(true);
+                            }}
+                          >
                           Ver Detalle
                         </Button>
+                        </ProtectedComponent>
                       </td>
                     </tr>
                   ))}
@@ -348,6 +353,7 @@ export default function FacturacionPage() {
             </div>
           </CardContent>
         </Card>
+        </ProtectedComponent>
 
         {/* MODAL DETALLE FACTURA */}
         <ModalDetalleFactura
@@ -356,6 +362,13 @@ export default function FacturacionPage() {
           onOpenChange={setModalOpen}
         />
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function FacturacionPageProtected() {
+  return (
+    <ProtectedPage ruta="/facturacion">
+      <FacturacionPage />
+    </ProtectedPage>
   );
 }

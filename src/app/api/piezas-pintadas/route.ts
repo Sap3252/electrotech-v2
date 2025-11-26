@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasCoreAccess } from "@/lib/auth";
+import { getSession, hasPermission } from "@/lib/auth";
 import { StandardPaintStrategy } from "@/domain/strategy/StandardPaintStrategy";
 import { HighDensityPaintStrategy } from "@/domain/strategy/HighDensityPaintStrategy";
 
@@ -9,7 +9,9 @@ import { HighDensityPaintStrategy } from "@/domain/strategy/HighDensityPaintStra
 // ============================
 export async function GET() {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Tabla Historial Producción (ID 9)
+  if (!session || !(await hasPermission(session, 9))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
@@ -51,7 +53,9 @@ export async function GET() {
 // ============================
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Formulario Registrar Producción (ID 8)
+  if (!session || !(await hasPermission(session, 8))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
@@ -161,7 +165,9 @@ export async function PATCH(
   context: { params: { id: string } }
 ) {
   const session = await getSession();
-  if (!hasCoreAccess(session, 1)) {
+
+  // Verificar acceso al componente Formulario Registrar Producción (ID 8)
+  if (!session || !(await hasPermission(session, 8))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

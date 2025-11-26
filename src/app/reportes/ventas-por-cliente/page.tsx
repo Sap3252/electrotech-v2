@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
 
 type VentasData = {
   id_cliente: number;
@@ -13,7 +13,7 @@ type VentasData = {
   total_comprado: string;
 };
 
-export default function ReporteVentasPorCliente() {
+function ReporteVentasPorCliente() {
   const router = useRouter();
   const [data, setData] = useState<VentasData[]>([]);
   const [error, setError] = useState("");
@@ -41,7 +41,6 @@ export default function ReporteVentasPorCliente() {
   }, []);
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Gerente"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <Card className="p-6">
           <CardHeader>
@@ -77,6 +76,13 @@ export default function ReporteVentasPorCliente() {
           </Button>
         </div>
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function ReporteVentasPorClienteProtected() {
+  return (
+    <ProtectedPage ruta="/reportes/ventas-por-cliente">
+      <ReporteVentasPorCliente />
+    </ProtectedPage>
   );
 }

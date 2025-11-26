@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
+import ProtectedComponent from "@/components/ProtectedComponent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -19,7 +20,7 @@ import { ModalDetalleRemito } from "@/components/remitos/ModalDetalleRemito";
 
 
 
-export default function RemitosPage() {
+function RemitosPage() {
   const router = useRouter();
   const [clientes, setClientes] = useState<any[]>([]);
   const [piezas, setPiezas] = useState<any[]>([]);
@@ -116,7 +117,6 @@ export default function RemitosPage() {
 
 
   return (
-    <ProtectedRoute allowedGroups={["Contabilidad", "Admin"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <div className="flex justify-end mb-4">
           <Button
@@ -132,10 +132,11 @@ export default function RemitosPage() {
         {/* ================================
             FORMULARIO
         =================================== */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Cargar Remito</CardTitle>
-          </CardHeader>
+        <ProtectedComponent componenteId={10}>
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Cargar Remito</CardTitle>
+            </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -257,11 +258,13 @@ export default function RemitosPage() {
             </Button>
           </CardContent>
         </Card>
+        </ProtectedComponent>
 
         {/* ================================
             TABLA DE REMITOS
         =================================== */}
-        <Card>
+        <ProtectedComponent componenteId={11}>
+          <Card>
           <CardHeader>
             <CardTitle>Remitos Registrados</CardTitle>
           </CardHeader>
@@ -287,13 +290,15 @@ export default function RemitosPage() {
                       <td className="p-2">{r.fecha_recepcion}</td>
                       <td className="p-2">{r.cantidad_piezas}</td>
                       <td className="p-2">
-                        <Button
-                          size="sm"
-                          className="bg-blue-600 text-white hover:bg-blue-700"
-                          onClick={() => verDetalle(r.id_remito)}
-                        >
-                          Ver Detalle
-                        </Button>
+                        <ProtectedComponent componenteId={12}>
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            onClick={() => verDetalle(r.id_remito)}
+                          >
+                            Ver Detalle
+                          </Button>
+                        </ProtectedComponent>
                       </td>
                     </tr>
                   ))}
@@ -302,6 +307,7 @@ export default function RemitosPage() {
             </div>
           </CardContent>
         </Card>
+        </ProtectedComponent>
 
         {/* ================================
             MODAL DETALLE
@@ -312,6 +318,13 @@ export default function RemitosPage() {
           onOpenChange={setOpenModal}
         />
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function RemitosPageProtected() {
+  return (
+    <ProtectedPage ruta="/remitos">
+      <RemitosPage />
+    </ProtectedPage>
   );
 }

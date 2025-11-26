@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
 
 type FacturaData = {
   id_factura: number;
@@ -19,7 +19,7 @@ type Cliente = {
   nombre: string;
 };
 
-export default function ReporteVentasClienteEspecifico() {
+function ReporteVentasClienteEspecifico() {
   const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteSeleccionado, setClienteSeleccionado] = useState("");
@@ -54,7 +54,6 @@ export default function ReporteVentasClienteEspecifico() {
   };
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Gerente"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <Card className="p-6">
           <CardHeader>
@@ -120,6 +119,13 @@ export default function ReporteVentasClienteEspecifico() {
           </Button>
         </div>
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function ReporteVentasClienteEspecificoProtected() {
+  return (
+    <ProtectedPage ruta="/reportes/ventas-cliente-especifico">
+      <ReporteVentasClienteEspecifico />
+    </ProtectedPage>
   );
 }
