@@ -17,15 +17,32 @@ import {
 } from "@/components/ui/select";
 import { ModalDetalleRemito } from "@/components/remitos/ModalDetalleRemito";
 
+interface Cliente {
+  id_cliente: number;
+  nombre: string;
+  direccion: string;
+}
 
+interface Pieza {
+  id_pieza: number;
+  detalle: string;
+  ancho_m: number;
+  alto_m: number;
+  id_cliente: number;
+}
 
+interface Remito {
+  id_remito: number;
+  cliente_nombre: string;
+  fecha_recepcion: string;
+  cantidad_piezas: number;
+}
 
 function RemitosPage() {
   const router = useRouter();
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [piezas, setPiezas] = useState<any[]>([]);
-  const [piezasFiltradas, setPiezasFiltradas] = useState<any[]>([]);
-  const [remitos, setRemitos] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [piezasFiltradas, setPiezasFiltradas] = useState<Pieza[]>([]);
+  const [remitos, setRemitos] = useState<Remito[]>([]);
 
   const [form, setForm] = useState({
     id_cliente: "",
@@ -39,17 +56,12 @@ function RemitosPage() {
   >([]);
     const [piezaSeleccionada, setPiezaSeleccionada] = useState("");
     const [cantidad, setCantidad] = useState("");
-  // =============================
-  // CARGAS INICIALES
-  // =============================
+  //================
+  //CARGAS INICIALES
+  //================
   const cargarClientes = async () => {
     const res = await fetch("/api/clientes");
     if (res.ok) setClientes(await res.json());
-  };
-
-  const cargarPiezas = async () => {
-    const res = await fetch("/api/piezas");
-    if (res.ok) setPiezas(await res.json());
   };
 
   const cargarPiezasCliente = async (id_cliente: string) => {
@@ -71,15 +83,14 @@ function RemitosPage() {
   useEffect(() => {
     const fetchData = async () => {
       await cargarClientes();
-      await cargarPiezas();
       await cargarRemitos();
     };
     fetchData();
   }, []);
 
-  // =============================
-  // GUARDAR REMITO
-  // =============================
+  // =============
+  //GUARDAR REMITO
+  // =============
   const guardarRemito = async () => {
     if (!form.id_cliente || !form.fecha_recepcion || detalle.length === 0) {
       alert("Complete todos los campos");
@@ -96,25 +107,25 @@ function RemitosPage() {
       }),
     });
 
-
     if (res.ok) {
       alert("Remito cargado correctamente");
       setForm({ id_cliente: "", fecha_recepcion: "" });
       setDetalle([]);
-      cargarRemitos();
+      setPiezaSeleccionada("");
+      setCantidad("");
+      await cargarRemitos();
     } else {
       alert("Error al cargar remito");
     }
   };
 
-  // =============================
-  // VER DETALLE DEL REMITO
-  // =============================
+  //=======================
+  //VER DETALLE DEL REMITO
+  //========================
   const verDetalle = (id: number) => {
     setSelectedRemito(id);
     setOpenModal(true);
   };
-
 
   return (
       <div className="min-h-screen bg-slate-100 p-10">
@@ -155,7 +166,7 @@ function RemitosPage() {
                     <SelectValue placeholder="Seleccione cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clientes.map((c: any) => (
+                    {clientes.map((c) => (
                       <SelectItem key={c.id_cliente} value={String(c.id_cliente)}>
                         {c.nombre}
                       </SelectItem>
@@ -194,7 +205,7 @@ function RemitosPage() {
                   <SelectValue placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {piezasFiltradas.map((p: any) => (
+                  {piezasFiltradas.map((p) => (
                     <SelectItem
                       key={p.id_pieza}
                       value={String(p.id_pieza)}
@@ -216,7 +227,7 @@ function RemitosPage() {
                 <Button
                     className="bg-black text-white"
                     onClick={() => {
-                        const p = piezasFiltradas.find((x: any) => String(x.id_pieza) === piezaSeleccionada);
+                        const p = piezasFiltradas.find((x) => String(x.id_pieza) === piezaSeleccionada);
                         if (!p || !cantidad) return;
 
                         setDetalle((prev) => [
@@ -232,8 +243,8 @@ function RemitosPage() {
                         setPiezaSeleccionada("");
                     }}
                 >
-  Agregar al detalle
-</Button>
+                Agregar al detalle
+                </Button>
             </div>
 
             {/* Lista */}
@@ -251,7 +262,8 @@ function RemitosPage() {
             )}
 
             <Button
-              className="mt-6 bg-black text-white hover:bg-black/80"
+            
+              className="mt-6 bg-green-600 text-white/80"
               onClick={guardarRemito}
             >
               Guardar Remito
@@ -281,7 +293,7 @@ function RemitosPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {remitos.map((r: any) => (
+                  {remitos.map((r) => (
                     <tr key={r.id_remito} className="border-b">
                       <td className="p-2">{r.id_remito}</td>
                       <td className="p-2">

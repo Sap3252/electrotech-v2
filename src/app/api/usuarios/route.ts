@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { pool } from "@/lib/db";
-import { RowDataPacket } from "mysql2/promise";
+import { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import bcrypt from "bcryptjs";
 
-// GET: Listar todos los usuarios con sus grupos
+//Listar todos los usuarios con sus grupos
 export async function GET() {
   try {
     const session = await getSession();
@@ -14,7 +14,7 @@ export async function GET() {
 
     const connection = await pool.getConnection();
     try {
-      // Obtener usuarios con sus grupos
+      //Obtener usuarios con sus grupos
       const [usuarios] = await connection.query<RowDataPacket[]>(`
         SELECT 
           u.id_usuario,
@@ -43,7 +43,7 @@ export async function GET() {
   }
 }
 
-// POST: Crear nuevo usuario
+//Crear nuevo usuario
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Solo Admin puede crear usuarios
+    //Solo Admin puede crear usuarios
     if (!session.grupos.includes("Admin")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
     }
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     try {
       await connection.beginTransaction();
 
-      // Verificar si el email ya existe
+      //Verificar si el email ya existe
       const [existente] = await connection.query<RowDataPacket[]>(
         "SELECT id_usuario FROM Usuario WHERE email = ?",
         [email]
@@ -84,19 +84,19 @@ export async function POST(request: Request) {
         );
       }
 
-      // Hash de la contraseña
+      //Hash de la contraseña
       const passwordHash = await bcrypt.hash(password, 10);
 
-      // Insertar usuario
-      const [resultado] = await connection.query(
+      //Insertar usuario
+      const [resultado] = await connection.query<ResultSetHeader>(
         `INSERT INTO Usuario (email, password_hash, nombre, apellido) 
          VALUES (?, ?, ?, ?)`,
         [email, passwordHash, nombre || null, apellido || null]
       );
 
-      const id_usuario = (resultado as any).insertId;
+      const id_usuario = resultado.insertId;
 
-      // Asignar grupos si se proporcionaron
+      //Asignar grupos si se proporcionaron
       if (grupos && Array.isArray(grupos) && grupos.length > 0) {
         const values = grupos.map((id_grupo: number) => [id_usuario, id_grupo]);
         await connection.query(

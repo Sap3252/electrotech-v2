@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { RowDataPacket } from "mysql2/promise";
 
-// GET: Obtener grupo específico
+//Obtener grupo específico
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -51,7 +51,7 @@ export async function GET(
   }
 }
 
-// PUT: Actualizar grupo
+//Actualizar grupo
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -91,7 +91,7 @@ export async function PUT(
 
       // Construir query de actualización
       const updates: string[] = [];
-      const values: any[] = [];
+      const values: (string | number)[] = [];
 
       if (nombre !== undefined) {
         updates.push("nombre = ?");

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { pool } from "@/lib/db";
-import { RowDataPacket } from "mysql2/promise";
+import { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 
-// GET: Listar todos los grupos con conteo de usuarios
+//Listar todos los grupos con conteo de usuarios
 export async function GET() {
   try {
     const session = await getSession();
@@ -49,7 +49,7 @@ export async function GET() {
   }
 }
 
-// POST: Crear nuevo grupo
+//Crear nuevo grupo
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     const connection = await pool.getConnection();
     try {
-      // Verificar si el nombre ya existe
+      // Verificacion del nombre (si existe)
       const [existente] = await connection.query<RowDataPacket[]>(
         "SELECT id_grupo FROM Grupo WHERE nombre = ?",
         [nombre]
@@ -87,12 +87,12 @@ export async function POST(request: Request) {
         );
       }
 
-      const [resultado] = await connection.query(
+      const [resultado] = await connection.query<ResultSetHeader>(
         "INSERT INTO Grupo (nombre, id_estado) VALUES (?, ?)",
         [nombre, id_estado || 1]
       );
 
-      const id_grupo = (resultado as any).insertId;
+      const id_grupo = resultado.insertId;
 
       return NextResponse.json(
         { message: "Grupo creado exitosamente", id_grupo },

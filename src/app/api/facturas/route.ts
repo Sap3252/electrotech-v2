@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
+import { RowDataPacket, ResultSetHeader } from "mysql2";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
       await conn.beginTransaction();
 
       // 1) CREAR FACTURA
-      const [facturaResult]: any = await conn.query(
+      const [facturaResult] = await conn.query<ResultSetHeader>(
         `INSERT INTO Factura (id_cliente, fecha, total)
          VALUES (?, NOW(), 0)`,
         [id_cliente]
@@ -35,8 +36,8 @@ export async function POST(req: Request) {
       for (const item of items) {
         const { id_pieza_pintada, cantidad, precio_unitario } = item;
 
-        // 2A) Verificar disponibilidad real al momento
-        const [rows]: any = await conn.query(
+        // 2.1) Verificar disponibilidad real al momento
+        const [rows] = await conn.query<RowDataPacket[]>(
           `SELECT cantidad, cantidad_facturada 
            FROM PiezaPintada 
            WHERE id_pieza_pintada = ?`,
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
         const subtotal = cantidad * precio_unitario;
         totalFactura += subtotal;
 
-        // 2B) Insertar detalle
+        // 2.2) Insertar detalle
         await conn.query(
           `INSERT INTO FacturaDetalle 
            (id_factura, id_pieza_pintada, cantidad, precio_unitario)
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
           [id_factura, id_pieza_pintada, cantidad, precio_unitario]
         );
 
-        // 2C) Actualizar cantidad facturada
+        // 2.3) Actualizar cantidad facturada
         await conn.query(
           `UPDATE PiezaPintada
            SET cantidad_facturada = cantidad_facturada + ?

@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { pool } from "@/lib/db";
 
+interface JWTPayload {
+  id_usuario: number;
+  email: string;
+  grupos: string[];
+  idAuditoria: number;
+}
+
 export async function POST(req: Request) {
   try {
     const cookies = req.headers.get("cookie") ?? "";
@@ -12,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     const token = sessionMatch[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
 
     const userId = decoded.id_usuario;
 
@@ -23,7 +30,7 @@ export async function POST(req: Request) {
 
     console.log("Logging out user:", userId);
 
-    // Set logout time in the last open session
+    // guardar logout en auditoria
     await pool.execute(
       `
       UPDATE AuditoriaSesion
@@ -35,7 +42,7 @@ export async function POST(req: Request) {
       [userId]
     );
 
-    // Remove cookie
+    // Borrar cookie de sesion
     const res = NextResponse.json({ message: "Logged out" });
     res.cookies.set("session", "", {
       httpOnly: true,

@@ -3,13 +3,12 @@
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedPage from "@/components/ProtectedPage";
 
-export default function ReportesPage() {
+function ReportesPageContent() {
   const router = useRouter();
 
   return (
-    <ProtectedRoute allowedGroups={["Admin", "Gerente"]}>
       <div className="min-h-screen bg-slate-100 p-10">
         <h1 className="text-3xl font-bold mb-6">Reportes</h1>
 
@@ -134,6 +133,13 @@ export default function ReportesPage() {
           </Button>
         </div>
       </div>
-    </ProtectedRoute>
+  );
+}
+
+export default function ReportesPage() {
+  return (
+    <ProtectedPage ruta="/reportes">
+      <ReportesPageContent />
+    </ProtectedPage>
   );
 }

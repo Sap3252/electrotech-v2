@@ -5,7 +5,7 @@ import { getSession, hasPermission } from "@/lib/auth";
 export async function GET() {
   const session = await getSession();
 
-  // Verificar acceso al componente Ver Piezas Disponibles (ID 2 - tabla piezas)
+  // Verificar acceso al componente Ver Piezas Disponibles (ID 2 tabla piezas)
   if (!session || !(await hasPermission(session, 2))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }

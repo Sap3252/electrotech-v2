@@ -6,7 +6,7 @@ import { RowDataPacket } from "mysql2/promise";
 export async function GET() {
   const session = await getSession();
 
-  // Verificar acceso al componente Participación Clientes (ID 18)
+  // Verificar acceso al componente Participacion Clientes (ID 18)
   if (!session || !(await hasPermission(session, 18))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }

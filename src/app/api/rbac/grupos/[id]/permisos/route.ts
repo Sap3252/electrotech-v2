@@ -3,7 +3,7 @@ import { pool } from "@/lib/db";
 import { getSession, hasGroup } from "@/lib/auth";
 import { RowDataPacket } from "mysql2/promise";
 
-// GET: Obtener permisos de un grupo
+//Obtener permisos de un grupo
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -41,7 +41,7 @@ export async function GET(
   }
 }
 
-// POST: Actualizar permisos de un grupo (sobrescribir)
+//Actualizar permisos de un grupo (sobrescribir)
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -76,7 +76,7 @@ export async function POST(
       [id]
     );
 
-    // Insertar nuevos permisos
+    //Insertar nuevos permisos
     if (componentes.length > 0) {
       const values = componentes.map(id_componente => [id, id_componente]);
       await conn.query(
@@ -103,7 +103,7 @@ export async function POST(
   }
 }
 
-// PUT: Agregar un permiso al grupo
+//Agregar un permiso al grupo
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -136,7 +136,7 @@ export async function PUT(
   }
 }
 
-// DELETE: Remover un permiso del grupo
+//Remover un permiso del grupo
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

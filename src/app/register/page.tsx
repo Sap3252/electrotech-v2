@@ -2,18 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-// Composite
+//Composite
 import {
   LoginComposite,
   InputField,
 } from "@/domain/loginComposite";
 
-// shadcn ui
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-// Crear composite para register
+//Crear composite para register
 const registerComposite = new LoginComposite();
 registerComposite.agregar(new InputField("nombre", "Nombre"));
 registerComposite.agregar(new InputField("apellido", "Apellido"));
@@ -37,7 +35,7 @@ export default function RegisterPage() {
       password: String(form.get("password") || ""),
     };
 
-    // Validar campos con Composite
+    //Validar campos con Composite
     const validation = registerComposite.validate(values);
     if (validation.length > 0) {
       setErrors(validation);

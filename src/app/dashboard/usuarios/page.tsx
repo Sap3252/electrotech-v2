@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,11 +49,7 @@ export default function UsuariosPage() {
     new Set()
   );
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
       const [resUsuarios, resGrupos] = await Promise.all([
@@ -80,7 +76,11 @@ export default function UsuariosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
 
   const limpiarFormulario = () => {
     setEditando(false);
@@ -156,9 +156,9 @@ export default function UsuariosPage() {
 
       limpiarFormulario();
       await cargarDatos();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Error al guardar usuario");
+      alert(error instanceof Error ? error.message : "Error al guardar usuario");
     } finally {
       setGuardando(false);
     }
@@ -177,9 +177,9 @@ export default function UsuariosPage() {
 
       alert("Usuario eliminado exitosamente");
       await cargarDatos();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Error al eliminar usuario");
+      alert(error instanceof Error ? error.message : "Error al eliminar usuario");
     }
   };
 

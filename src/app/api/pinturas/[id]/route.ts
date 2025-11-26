@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
+import { RowDataPacket } from "mysql2";
 
-// =======================
-// GET por ID
-// =======================
+// ===============
+// obtener por ID
+// ===============
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
 
-  // Verificar acceso al componente Ver Detalle Pintura (ID 23 - crear si no existe)
+  // Verificar acceso al componente Ver Detalle Pintura (ID 23 crear si no existe)
   if (!session || !(await hasPermission(session, 6))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
   try {
     const { id } = await params;
-    const [rows]: any = await pool.query(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `
       SELECT 
         p.id_pintura,
@@ -54,16 +55,16 @@ export async function GET(
   }
 }
 
-// =======================
-// PUT (actualizar pintura)
-// =======================
+// =================
+// actualizar pintura
+// =================
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
 
-  // Verificar acceso al componente Editar Pintura (ID 24 - crear si no existe)
+  // Verificar acceso al componente Editar Pintura (ID 24 crear si no existe)
   if (!session || !(await hasPermission(session, 24))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -118,7 +119,7 @@ export async function DELETE(
 ) {
   const session = await getSession();
 
-  // Verificar acceso al componente Botón Eliminar Pintura (ID 7)
+  // Verificar acceso al componente Boton Eliminar Pintura (ID 7)
   if (!session || !(await hasPermission(session, 7))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }

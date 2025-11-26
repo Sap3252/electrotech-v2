@@ -4,21 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-// 🟦 COMPOSITE (tu patrón)
+//PATRON COMPOSITE
 import {
   LoginComposite,
   InputField,
   CheckboxField,
 } from "@/domain/loginComposite";
 
-// 🟦 SHADCN UI
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 
-// =====================================================
+// =======================================
 // CONFIGURAR CAMPOS DEL LOGIN (Composite)
-// =====================================================
+// =======================================
 
 const loginComposite = new LoginComposite();
 loginComposite.agregar(new InputField("email", "Email", "email"));
@@ -26,9 +25,9 @@ loginComposite.agregar(new InputField("password", "Contraseña", "password"));
 loginComposite.agregar(new CheckboxField("remember", "Recordarme"));
 
 
-// =====================================================
+// ================
 // PÁGINA DE LOGIN
-// =====================================================
+// ================
 
 export default function LoginPage() {
   const [errors, setErrors] = useState<string[]>([]);
@@ -46,7 +45,7 @@ export default function LoginPage() {
       remember: String(form.get("remember") || ""),
     };
 
-    // Validación por COMPOSITE
+    // Validación en loginComposite
     const validation = loginComposite.validate(values);
     if (validation.length > 0) {
       setErrors(validation);

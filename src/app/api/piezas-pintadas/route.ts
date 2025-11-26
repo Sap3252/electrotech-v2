@@ -3,6 +3,7 @@ import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
 import { StandardPaintStrategy } from "@/domain/strategy/StandardPaintStrategy";
 import { HighDensityPaintStrategy } from "@/domain/strategy/HighDensityPaintStrategy";
+import { RowDataPacket } from "mysql2";
 
 // ============================
 // GET: obtener todas las piezas pintadas
@@ -49,12 +50,12 @@ export async function GET() {
 
 
 // ============================
-// POST: crear nueva pieza pintada
+// crear nueva pieza pintada
 // ============================
 export async function POST(req: Request) {
   const session = await getSession();
 
-  // Verificar acceso al componente Formulario Registrar Producción (ID 8)
+  // Verificar acceso al componente Formulario Registrar Produccion (ID 8)
   if (!session || !(await hasPermission(session, 8))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -63,11 +64,11 @@ export async function POST(req: Request) {
 
   try {
     // 1) Verificar stock disponible
-    const [stockRows] = await pool.query(
+    const [stockRows] = await pool.query<RowDataPacket[]>(
       "SELECT stock_disponible FROM StockPieza WHERE id_pieza = ?",
       [id_pieza]
     );
-    const stockRow: any = (stockRows as any[])[0];
+    const stockRow = stockRows[0];
     const stockDisponible = stockRow?.stock_disponible ?? 0;
 
     if (stockDisponible < cantidad) {
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
     }
 
     // 2) Obtener dimensiones de la pieza
-    const [piezaRows]: any = await pool.query(
+    const [piezaRows] = await pool.query<RowDataPacket[]>(
       "SELECT ancho_m, alto_m FROM Pieza WHERE id_pieza = ?",
       [id_pieza]
     );
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
 
     const pieza = piezaRows[0];
 
-    // 3) Calcular consumo usando Strategy pattern
+    // 3) Calcular consumo usando patron Strategy 
     const strategy = estrategia === "highdensity" 
       ? new HighDensityPaintStrategy() 
       : new StandardPaintStrategy();
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
     const consumo_total_kg = consumo_por_pieza * cantidad;
 
     // 4) Verificar stock de pintura disponible
-    const [pinturaRows]: any = await pool.query(
+    const [pinturaRows] = await pool.query<RowDataPacket[]>(
       "SELECT cantidad_kg FROM Pintura WHERE id_pintura = ?",
       [id_pintura]
     );
@@ -158,7 +159,7 @@ export async function POST(req: Request) {
 }
 
 // ============================
-// PATCH: actualizar cantidad_facturada
+//actualizar cantidad_facturada
 // ============================
 export async function PATCH(
   req: Request,
@@ -175,7 +176,7 @@ export async function PATCH(
   const { cantidad_facturada } = await req.json();
 
   try {
-    const [result]: any = await pool.query(
+    await pool.query(
       `
       UPDATE PiezaPintada 
       SET cantidad_facturada = ?

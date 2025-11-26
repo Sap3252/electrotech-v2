@@ -3,7 +3,7 @@ import { pool } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { RowDataPacket } from "mysql2/promise";
 
-// GET: Listar todos los grupos
+//Listar todos los grupos
 export async function GET() {
   const session = await getSession();
   

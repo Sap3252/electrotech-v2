@@ -58,7 +58,7 @@ function ReportePinturaMasUtilizada() {
               <p className="text-gray-500">Cargando datos...</p>
             ) : (
               <div className="space-y-6">
-                {/* Pintura Más Utilizada - Destacada */}
+                {/* Pintura Más Utilizada */}
                 <div className="bg-linear-to-r from-blue-50 to-blue-100 p-8 rounded-lg border-2 border-blue-300">
                   <h3 className="text-2xl font-bold mb-4 text-blue-900">🏆 Pintura con Mayor Consumo</h3>
                   <div className="grid grid-cols-2 gap-6">
@@ -81,7 +81,7 @@ function ReportePinturaMasUtilizada() {
                   </div>
                 </div>
 
-                {/* Otras Pinturas - Lista más pequeña */}
+                {/* Otras Pinturas */}
                 {otrasUtilizadas.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold mb-3 text-gray-700">Otras Pinturas Utilizadas</h3>

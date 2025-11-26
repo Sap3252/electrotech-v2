@@ -62,9 +62,9 @@ function FacturacionPage() {
   const [cantidad, setCantidad] = useState(1);
   const [precioUnitario, setPrecioUnitario] = useState(0);
 
-  // ============================
-  // CARGAS INICIALES
-  // ============================
+  // ===============
+  //CARGAS INICIALES
+  // ==============
   const cargarClientes = async () => {
     const res = await fetch("/api/clientes");
     if (res.ok) setClientes(await res.json());
@@ -103,9 +103,9 @@ function FacturacionPage() {
     };
   }, []);
 
-  // ============================
-  // AGREGAR ÍTEM A LA FACTURA
-  // ============================
+  // ========================
+  //AGREGAR ÍTEM A LA FACTURA
+  // ========================
   const agregarItem = () => {
     if (!selectedPieza) return alert("Seleccione una pieza");
     if (cantidad < 1) return alert("Cantidad inválida");
@@ -134,14 +134,14 @@ function FacturacionPage() {
     setSelectedPieza(null);
   };
 
-  // ============================
-  // TOTAL FACTURA
-  // ============================
+  // =============
+  //TOTAL FACTURA
+  // =============
   const totalFactura = items.reduce((acc, x) => acc + x.subtotal, 0);
 
-  // ============================
-  // GUARDAR FACTURA
-  // ============================
+  // ===============
+  //GUARDAR FACTURA
+  // ===============
   const guardarFactura = async () => {
     if (!form.id_cliente) return alert("Seleccione cliente");
     if (items.length === 0) return alert("Agregue items");

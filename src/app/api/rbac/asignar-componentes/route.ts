@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Iniciar transacción
+    // Iniciar transaccion
     const connection = await pool.getConnection();
     
     try {

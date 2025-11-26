@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,13 +43,7 @@ export default function EditarPermisosGrupo({
     loadParams();
   }, [params]);
 
-  useEffect(() => {
-    if (idGrupo) {
-      cargarDatos();
-    }
-  }, [idGrupo]);
-
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     if (!idGrupo) return;
 
     try {
@@ -73,7 +67,13 @@ export default function EditarPermisosGrupo({
     } finally {
       setLoading(false);
     }
-  };
+  }, [idGrupo, router]);
+
+  useEffect(() => {
+    if (idGrupo) {
+      cargarDatos();
+    }
+  }, [idGrupo, cargarDatos]);
 
   const toggleComponente = (idComponente: number) => {
     setComponentes((prev) =>
@@ -113,9 +113,9 @@ export default function EditarPermisosGrupo({
 
       alert("Permisos actualizados exitosamente");
       router.push("/dashboard/grupos");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Error al guardar permisos");
+      alert(error instanceof Error ? error.message : "Error al guardar permisos");
     } finally {
       setGuardando(false);
     }

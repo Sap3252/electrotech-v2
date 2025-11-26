@@ -3,7 +3,7 @@ import { pool } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { RowDataPacket } from "mysql2/promise";
 
-// GET: Obtener estructura completa de módulos, formularios y componentes
+//Obtener estructura completa de modulos, formularios y componentes
 export async function GET() {
   const session = await getSession();
   
@@ -24,7 +24,7 @@ export async function GET() {
       ORDER BY m.orden
     `);
 
-    // Cargar formularios y componentes para cada módulo
+    // Cargar formularios y componentes para cada modulo
     for (const modulo of modulos) {
       const [formularios] = await pool.query<RowDataPacket[]>(`
         SELECT 

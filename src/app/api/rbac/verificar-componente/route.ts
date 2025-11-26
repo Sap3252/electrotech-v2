@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession, hasPermission } from "@/lib/auth";
 
-// POST: Verificar si el usuario tiene acceso a un componente específico
+//Verificar si el usuario tiene acceso a un componente especifico
 export async function POST(request: Request) {
   try {
     const session = await getSession();

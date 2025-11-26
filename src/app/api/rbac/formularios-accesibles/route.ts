@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession, getAccesibleFormularios } from "@/lib/auth";
 
-// GET: Obtener lista de formularios/páginas a las que el usuario tiene acceso
+//Obtener lista de formularios/páginas a las que el usuario tiene acceso
 export async function GET() {
   try {
     const session = await getSession();

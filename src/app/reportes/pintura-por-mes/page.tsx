@@ -34,6 +34,7 @@ function ReportePinturaPorMes() {
       })
       .then((res: PinturaMesData[]) => {
         if (Array.isArray(res)) {
+          
           // Agrupar por mes
           const mesesMap: Record<string, ChartData> = {};
           res.forEach(item => {

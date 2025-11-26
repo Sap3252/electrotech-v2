@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession, hasFormularioAccess } from "@/lib/auth";
 
-// POST: Verificar si el usuario tiene acceso a una ruta específica
+//Verificar si el usuario tiene acceso a una ruta especifica
 export async function POST(request: Request) {
   try {
     const session = await getSession();

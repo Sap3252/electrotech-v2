@@ -27,7 +27,8 @@ export const transporter = nodemailer.createTransport({
   authMethod: "PLAIN" // Forzar autenticación PLAIN
 });
 
-// Verificar la conexión al iniciar (opcional)
+/*
+// Verificacion de la conexión al iniciar
 export async function verifyMailConnection() {
   try {
     await transporter.verify();
@@ -38,3 +39,4 @@ export async function verifyMailConnection() {
     return false;
   }
 }
+*/

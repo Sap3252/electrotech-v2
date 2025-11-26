@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type ProtectedPageProps = {
@@ -18,11 +18,7 @@ export default function ProtectedPage({
   const [verificando, setVerificando] = useState(true);
   const [tieneAcceso, setTieneAcceso] = useState(false);
 
-  useEffect(() => {
-    verificarAcceso();
-  }, [ruta]);
-
-  const verificarAcceso = async () => {
+  const verificarAcceso = useCallback(async () => {
     try {
       const res = await fetch("/api/rbac/verificar-acceso", {
         method: "POST",
@@ -41,7 +37,7 @@ export default function ProtectedPage({
       const data = await res.json();
 
       if (!data.tieneAcceso) {
-        // Sin permisos - redirigir al dashboard
+        // Sin permisos -> redirigir al dashboard
         alert("No tienes permisos para acceder a esta página");
         router.push("/dashboard");
         return;
@@ -54,7 +50,11 @@ export default function ProtectedPage({
     } finally {
       setVerificando(false);
     }
-  };
+  }, [ruta, router]);
+
+  useEffect(() => {
+    verificarAcceso();
+  }, [verificarAcceso]);
 
   if (verificando) {
     return loadingComponent || (
@@ -65,7 +65,7 @@ export default function ProtectedPage({
   }
 
   if (!tieneAcceso) {
-    return null; // Ya redirigió
+    return null;
   }
 
   return <>{children}</>;

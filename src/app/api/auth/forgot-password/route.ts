@@ -2,16 +2,17 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import crypto from "crypto";
 import { transporter } from "@/lib/mail";
+import { RowDataPacket } from "mysql2";
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
 
-    const [rows] = await pool.query("SELECT * FROM Usuario WHERE email = ?", [
+    const [rows] = await pool.query<RowDataPacket[]>("SELECT * FROM Usuario WHERE email = ?", [
       email,
     ]);
 
-    if ((rows as any[]).length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json(
         { error: "El correo no pertenece a ningún usuario" },
         { status: 404 }
@@ -31,8 +32,9 @@ export async function POST(req: Request) {
     console.log("📧 Enviando correo desde:", process.env.SMTP_USER);
     console.log("📧 Enviando correo a:", email);
     
+    // Mensaje del mail de recuperacion
     const info = await transporter.sendMail({
-      from: `"ElectroTech" <${process.env.SMTP_USER}>`, // Nombre y email explícitos
+      from: `"ElectroTech" <${process.env.SMTP_USER}>`, 
       to: email,
       subject: "Recuperar contraseña - ElectroTech",
       html: `

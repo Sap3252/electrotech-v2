@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
+import { ResultSetHeader } from "mysql2";
 
-// -------------------------------------
-// GET: Listar remitos con info del cliente
-// -------------------------------------
+//====================================
+//Listar remitos con info del cliente
+//====================================
 export async function GET() {
   const session = await getSession();
   
@@ -32,9 +33,9 @@ export async function GET() {
   }
 }
 
-// -------------------------------------
-// POST: Crear remito + detalles
-// -------------------------------------
+// =====================================
+//Crear remito + detalles
+// =====================================
 export async function POST(req: Request) {
   const session = await getSession();
   
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     }
 
     // Insertar remito
-    const [remitoRes]: any = await pool.query(
+    const [remitoRes] = await pool.query<ResultSetHeader>(
       `
       INSERT INTO Remito (id_cliente, fecha_recepcion, cantidad_piezas)
       VALUES (?, ?, ?)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,16 +49,12 @@ export default function GruposPage() {
   const [nombre, setNombre] = useState("");
   const [estadoSeleccionado, setEstadoSeleccionado] = useState<string>("1");
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
       const [resGrupos, resEstados] = await Promise.all([
         fetch("/api/grupos"),
-        fetch("/api/rbac/grupos"), // Reutilizar endpoint RBAC que trae estados
+        fetch("/api/rbac/grupos"),
       ]);
 
       if (!resGrupos.ok || !resEstados.ok) {
@@ -72,7 +68,7 @@ export default function GruposPage() {
       const dataGrupos = await resGrupos.json();
       setGrupos(dataGrupos);
 
-      // Extraer estados únicos de los grupos
+      //Extraer estados unicos de los grupos
       const estadosUnicos: EstadoGrupo[] = [
         { id_estado: 1, nombre: "Activo" },
         { id_estado: 2, nombre: "Inactivo" },
@@ -85,7 +81,11 @@ export default function GruposPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
 
   const limpiarFormulario = () => {
     setEditando(false);
@@ -147,9 +147,9 @@ export default function GruposPage() {
 
       limpiarFormulario();
       await cargarDatos();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Error al guardar grupo");
+      alert(error instanceof Error ? error.message : "Error al guardar grupo");
     } finally {
       setGuardando(false);
     }
@@ -168,9 +168,9 @@ export default function GruposPage() {
 
       alert("Grupo eliminado exitosamente");
       await cargarDatos();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
-      alert(error.message || "Error al eliminar grupo");
+      alert(error instanceof Error ? error.message : "Error al eliminar grupo");
     }
   };
 

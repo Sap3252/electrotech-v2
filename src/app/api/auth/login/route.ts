@@ -3,12 +3,13 @@ import { pool } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { createToken, setSession } from "@/lib/auth";
 import { AuditoriaSesion } from "@/domain/auditoriaSesion";
+import { RowDataPacket } from "mysql2";
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
   // 1. Buscar usuario
-  const [rows]: any = await pool.query("SELECT * FROM Usuario WHERE email = ?", [
+  const [rows] = await pool.query<RowDataPacket[]>("SELECT * FROM Usuario WHERE email = ?", [
     email,
   ]);
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   }
 
   // 3. OBTENER GRUPOS DEL USUARIO (CLAVE DEL SISTEMA)
-  const [gruposRows]: any = await pool.query(
+  const [gruposRows] = await pool.query<RowDataPacket[]>(
     `SELECT g.nombre 
      FROM GrupoUsuario gu
      JOIN Grupo g ON g.id_grupo = gu.id_grupo
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     [user.id_usuario]
   );
 
-  const grupos = gruposRows.map((g: any) => g.nombre);
+  const grupos = gruposRows.map((g) => g.nombre as string);
 
   // 4. Registrar login en auditoría
   const idAuditoria = await AuditoriaSesion.registrarLogin(user.id_usuario);
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
   const token = createToken({
     id_usuario: user.id_usuario,
     email: user.email,
-    grupos,            // 👈 AGREGADO (NECESARIO)
+    grupos,
     idAuditoria,
   });
 

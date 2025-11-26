@@ -1,13 +1,20 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { pool } from "./db";
+import { RowDataPacket } from "mysql2";
 
 const SECRET = process.env.JWT_SECRET!;
 
 // ===========================
 //  CREAR TOKEN
 // ===========================
-export function createToken(payload: { id_usuario: number; [k: string]: any }) {
+export function createToken(payload: { 
+  id_usuario: number; 
+  email: string;
+  grupos: string[];
+  idAuditoria: number;
+  [k: string]: string | number | boolean | string[];
+}) {
   return jwt.sign(payload, SECRET, { expiresIn: "8h" });
 }
 
@@ -49,13 +56,13 @@ export async function getSession(): Promise<SessionData | null> {
   if (!token) return null;
 
   try {
-    const decoded: any = jwt.verify(token, SECRET);
+    const decoded = jwt.verify(token, SECRET) as { id_usuario: number };
 
     // ⚠️ IMPORTANTE:
     // el token debe tener al menos { id_usuario: number }
     // cuando lo crees en el login usá: createToken({ id_usuario: usuario.id_usuario, ... })
 
-    const [rows]: any = await pool.query(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT g.nombre 
        FROM GrupoUsuario gu
        JOIN Grupo g ON g.id_grupo = gu.id_grupo
@@ -63,7 +70,7 @@ export async function getSession(): Promise<SessionData | null> {
       [decoded.id_usuario]
     );
 
-    const grupos = rows.map((r: any) => r.nombre as string);
+    const grupos = rows.map((r) => r.nombre as string);
 
     return {
       id_usuario: decoded.id_usuario,
@@ -107,7 +114,7 @@ export async function hasPermission(
 
   try {
     // Verificar si alguno de los grupos del usuario tiene acceso al componente
-    const [rows]: any = await pool.query(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT COUNT(*) as count
        FROM GrupoComponente gc
        JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
@@ -122,9 +129,9 @@ export async function hasPermission(
   }
 }
 
-// ===========================
+// ======================================
 //  VERIFICAR PERMISO A FORMULARIO (RBAC)
-// ===========================
+// ======================================
 
 export async function hasFormularioAccess(
   session: SessionData | null,
@@ -139,8 +146,8 @@ export async function hasFormularioAccess(
   }
 
   try {
-    // Verificar si el usuario tiene acceso a algún componente del formulario
-    const [rows]: any = await pool.query(
+    // Verificar si el usuario tiene acceso a componentes del formulario
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT COUNT(DISTINCT gc.id_componente) as count
        FROM GrupoComponente gc
        JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
@@ -160,17 +167,28 @@ export async function hasFormularioAccess(
   }
 }
 
-// ===========================
-//  OBTENER FORMULARIOS ACCESIBLES
-// ===========================
+// ==============================
+//OBTENER FORMULARIOS ACCESIBLES
+// ==============================
+
+interface FormularioAccesible {
+  id_modulo: number;
+  modulo: string;
+  modulo_icono: string;
+  modulo_orden: number;
+  id_formulario: number;
+  formulario: string;
+  ruta: string;
+  formulario_orden: number;
+}
 
 export async function getAccesibleFormularios(
   session: SessionData | null
-): Promise<any[]> {
+): Promise<FormularioAccesible[]> {
   if (!session) return [];
 
   try {
-    const [formularios]: any = await pool.query(
+    const [formularios] = await pool.query<RowDataPacket[]>(
       `SELECT DISTINCT 
          m.id_modulo,
          m.nombre as modulo,
@@ -191,7 +209,7 @@ export async function getAccesibleFormularios(
       [session.id_usuario]
     );
 
-    return formularios;
+    return formularios as FormularioAccesible[];
   } catch (error) {
     console.error("Error obteniendo formularios accesibles:", error);
     return [];

@@ -10,8 +10,14 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
   const { pathname } = req.nextUrl;
 
+  // Redirigir raíz a login
+  if (pathname === "/") {
+    console.log("🏠 Ruta raíz, redirigiendo a /login");
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   // Rutas públicas
-  const publicPaths = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
+  const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
   
   if (publicPaths.includes(pathname) || pathname.startsWith("/api/auth")) {
     console.log("✅ Ruta pública, permitiendo acceso");
@@ -29,7 +35,7 @@ export async function middleware(req: NextRequest) {
     await jwtVerify(token, SECRET);
     console.log("✅ Token válido, permitiendo acceso");
     return NextResponse.next();
-  } catch (error) {
+  } catch {
     console.log("❌ Token inválido, redirigiendo a /login");
     return NextResponse.redirect(new URL("/login", req.url));
   }

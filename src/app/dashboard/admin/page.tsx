@@ -31,7 +31,7 @@ export default function AdminPage() {
         
         const data = await res.json();
         
-        // Verificar que sea Admin
+        //Verificar que sea Admin
         if (!data.grupos.includes("Admin")) {
           router.push("/dashboard");
           return;
@@ -114,8 +114,7 @@ export default function AdminPage() {
               Gestionar Proveedores
             </Button>
           </CardContent>
-        </Card>
-
+</Card>
         {/* Gestión de Clientes */}
         <Card className="shadow hover:shadow-lg transition">
           <CardHeader>

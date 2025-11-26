@@ -75,7 +75,7 @@ function PiezasPintadasPage() {
   const [mensajeError, setMensajeError] = useState<string>("");
 
 
-  // Cargar combos y tabla
+  //Cargar combos y tabla
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -101,7 +101,7 @@ function PiezasPintadasPage() {
       return;
     }
 
-    // Validar stock disponible
+    //Validar stock disponible
     if (stockInfo && cantidad > stockInfo.stock_disponible) {
       setMensajeError(
         `No podés pintar ${cantidad} piezas. Stock disponible: ${stockInfo.stock_disponible}.`
@@ -135,7 +135,7 @@ function PiezasPintadasPage() {
       const resultado = await res.json();
       alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg`);
 
-      // Recargar tabla y piezas disponibles
+      //Recargar tabla y piezas disponibles
       const [lotesRes, piezasRes] = await Promise.all([
         fetch("/api/piezas-pintadas"),
         fetch("/api/piezas/disponibles"),
@@ -143,7 +143,7 @@ function PiezasPintadasPage() {
       setLotes(await lotesRes.json());
       setPiezas(await piezasRes.json());
 
-      // Resetear formulario
+      //Resetear formulario
       setCantidad(1);
       setPiezaSeleccionada("");
       setIdPieza("");

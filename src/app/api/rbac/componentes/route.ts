@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, isAdmin } from "@/lib/auth";
+import { RowDataPacket } from "mysql2";
+
+interface ComponenteRow extends RowDataPacket {
+  id_componente: number;
+  nombre: string;
+  id_formulario: number;
+  formulario: string;
+  formulario_ruta: string;
+  modulo: string;
+  asignado: number;
+}
 
 export async function GET(req: Request) {
   const session = await getSession();
@@ -16,8 +27,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Obtener todos los componentes con su información de módulo y formulario
-    const [componentes]: any = await pool.query(
+    // Obtener todos los componentes con su informacion de modulo y formulario
+    const [componentes] = await pool.query<ComponenteRow[]>(
       `SELECT 
         c.id_componente,
         c.nombre,
@@ -35,7 +46,7 @@ export async function GET(req: Request) {
     );
 
     return NextResponse.json(
-      componentes.map((c: any) => ({
+      componentes.map((c) => ({
         id_componente: c.id_componente,
         nombre: c.nombre,
         ruta: c.formulario_ruta,

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
+import { RowDataPacket } from "mysql2";
 
 export async function GET(req: Request) {
   const session = await getSession();
 
-  // Verificar acceso al componente Ventas Cliente Específico (ID 27 - crear)
+  // Verificar acceso al componente Ventas Cliente Especifico (ID 27 crear)
   if (!session || !(await hasPermission(session, 27))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [rows]: any = await pool.query(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT 
         f.id_factura,
         f.fecha,

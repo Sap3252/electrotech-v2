@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
+import { ResultSetHeader } from "mysql2";
 
 // =====================
-// GET - Obtener pinturas
+// Obtener pinturas
 // =====================
 export async function GET() {
   const session = await getSession();
@@ -42,9 +43,9 @@ export async function GET() {
   }
 }
 
-// =====================
-// POST - Insertar pintura
-// =====================
+// =================
+// Insertar pintura
+// ================
 export async function POST(req: Request) {
   const session = await getSession();
 
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
       precio_unitario,
     } = await req.json();
 
-    const [result]: any = await pool.query(
+    const [result] = await pool.query<ResultSetHeader>(
       `
       INSERT INTO Pintura
       (id_marca, id_tipo, id_color, id_proveedor, cantidad_kg, precio_unitario)

@@ -4,7 +4,7 @@ import { pool } from "@/lib/db";
 import { RowDataPacket } from "mysql2/promise";
 import bcrypt from "bcryptjs";
 
-// GET: Obtener usuario específico
+//Obtener usuario específico
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -38,7 +38,7 @@ export async function GET(
         );
       }
 
-      // Obtener grupos del usuario
+      //Obtener grupos del usuario
       const [grupos] = await connection.query<RowDataPacket[]>(
         `SELECT g.id_grupo, g.nombre
          FROM GrupoUsuario gu
@@ -64,7 +64,7 @@ export async function GET(
   }
 }
 
-// PUT: Actualizar usuario
+//Actualizar usuario
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -75,7 +75,7 @@ export async function PUT(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Solo Admin puede modificar usuarios
+    //Solo Admin puede modificar usuarios
     if (!session.grupos.includes("Admin")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
     }
@@ -89,7 +89,7 @@ export async function PUT(
     try {
       await connection.beginTransaction();
 
-      // Verificar si el email ya existe en otro usuario
+      //verificar si el email ya existe en otro usuario
       if (email) {
         const [existente] = await connection.query<RowDataPacket[]>(
           "SELECT id_usuario FROM Usuario WHERE email = ? AND id_usuario != ?",
@@ -105,9 +105,9 @@ export async function PUT(
         }
       }
 
-      // Construir query de actualización
+      //Construir query de actualización
       const updates: string[] = [];
-      const values: any[] = [];
+      const values: (string | number | null)[] = [];
 
       if (email !== undefined) {
         updates.push("email = ?");
@@ -135,7 +135,7 @@ export async function PUT(
         );
       }
 
-      // Actualizar grupos si se proporcionaron
+      //Actualizar grupos si se proporcionaron
       if (grupos !== undefined && Array.isArray(grupos)) {
         // Eliminar grupos actuales
         await connection.query(
@@ -143,7 +143,7 @@ export async function PUT(
           [id_usuario]
         );
 
-        // Insertar nuevos grupos
+        //Insertar nuevos grupos
         if (grupos.length > 0) {
           const values = grupos.map((id_grupo: number) => [
             id_usuario,
@@ -174,7 +174,7 @@ export async function PUT(
   }
 }
 
-// DELETE: Eliminar usuario
+//Eliminar usuario
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -185,7 +185,7 @@ export async function DELETE(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Solo Admin puede eliminar usuarios
+    //Solo Admin puede eliminar usuarios
     if (!session.grupos.includes("Admin")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
     }
@@ -193,7 +193,7 @@ export async function DELETE(
     const { id } = await params;
     const id_usuario = parseInt(id);
 
-    // No permitir que se elimine a sí mismo
+    //No permitir que se elimine a sí mismo
     if (id_usuario === session.id_usuario) {
       return NextResponse.json(
         { error: "No puedes eliminar tu propio usuario" },
@@ -203,7 +203,7 @@ export async function DELETE(
 
     const connection = await pool.getConnection();
     try {
-      // Las relaciones UsuarioGrupo se eliminan por CASCADE
+      //Las relaciones UsuarioGrupo se eliminan por CASCADE
       await connection.query("DELETE FROM Usuario WHERE id_usuario = ?", [
         id_usuario,
       ]);

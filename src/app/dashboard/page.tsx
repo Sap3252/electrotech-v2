@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Verificar sesión con el servidor
+  //Verificar sesión con el servidor
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -45,7 +45,7 @@ export default function Dashboard() {
     checkAuth();
   }, [router]);
 
-  // Si todavía no se cargó sesión → no mostrar nada
+  //Si todavía no se cargo sesion = no mostrar nada
   if (loading || !session) return null;
 
 
@@ -72,7 +72,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        {/* ---------------------- CORE 1 ---------------------- */}
+        {/* #region CORE 1 - Piezas & Pinturas */}
         <Card className="shadow transition p-4">
             <CardHeader>
               <CardTitle>Core 1 — Piezas & Pinturas</CardTitle>
@@ -106,10 +106,9 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        {/* #endregion */}
 
-
-
-        {/* ---------------------- CORE 2 ---------------------- */}
+        {/* #region CORE 2 - Remitos & Facturación */}
           <Card className="shadow transition p-4">
             <CardHeader>
               <CardTitle>Core 2 — Remitos & Facturación</CardTitle>
@@ -146,9 +145,9 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        {/* #endregion */}
 
-
-        {/* ---------------------- CORE 3 ---------------------- */}
+        {/* #region CORE 3 - Maquinaria */}
         <Card
             className="shadow cursor-pointer hover:shadow-lg transition"
             onClick={() => router.push("/core3")}
@@ -160,8 +159,9 @@ export default function Dashboard() {
               <p>Control de uso, alertas automáticas (Observer) e informes mensuales.</p>
             </CardContent>
           </Card>
+        {/* #endregion */}
 
-        {/* ---------------------- CORE 4 ---------------------- */}
+        {/* #region CORE 4 - Empleados */}
         <Card
             className="shadow cursor-pointer hover:shadow-lg transition"
             onClick={() => router.push("/core4")}
@@ -173,6 +173,7 @@ export default function Dashboard() {
               <p>Gestión de asistencia, salarios, descuentos y presentismo.</p>
             </CardContent>
           </Card>
+        {/* #endregion */}
       </div>
 
       <div className="mt-10 flex gap-4 flex-wrap">
