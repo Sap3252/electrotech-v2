@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ function PinturasPage() {
     precio_unitario: "",
     cantidad_kg: "",
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const cargarPinturas = async () => {
     const res = await fetch("/api/pinturas");
@@ -82,7 +84,26 @@ function PinturasPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    // client-side validation
+    const newErrors: { [key: string]: string } = {};
+    if (!form.id_marca) newErrors.id_marca = "Debe seleccionar una marca.";
+    if (!form.id_tipo) newErrors.id_tipo = "Debe seleccionar un tipo de pintura.";
+    if (!form.id_color) newErrors.id_color = "Debe seleccionar un color.";
+    if (!form.id_proveedor) newErrors.id_proveedor = "Debe seleccionar un proveedor.";
+
+    const precio = parseFloat(String(form.precio_unitario));
+    if (Number.isNaN(precio) || precio <= 0) newErrors.precio_unitario = "El precio debe ser un número mayor a 0.";
+
+    const cantidad = parseFloat(String(form.cantidad_kg));
+    if (Number.isNaN(cantidad) || cantidad <= 0) newErrors.cantidad_kg = "La cantidad debe ser un número mayor a 0.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
     const method = editId ? "PUT" : "POST";
     const url = editId ? `/api/pinturas/${editId}` : "/api/pinturas";
 
@@ -103,6 +124,9 @@ function PinturasPage() {
         precio_unitario: "",
         cantidad_kg: "",
       });
+    } else {
+      const text = await res.text().catch(() => "");
+      setErrors({ general: `Error del servidor: ${text || res.statusText}` });
     }
   };
 
@@ -157,8 +181,10 @@ function PinturasPage() {
               <Label>Marca</Label>
               <Select
                 value={form.id_marca}
-                onValueChange={(value) =>
-                  setForm({ ...form, id_marca: value })
+                onValueChange={(value) => {
+                  setForm({ ...form, id_marca: value });
+                  setErrors((prev) => { const copy = { ...prev }; delete copy.id_marca; delete copy.general; return copy; });
+                }
                 }
               >
                 <SelectTrigger>
@@ -172,14 +198,19 @@ function PinturasPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.id_marca && (
+                <p className="text-sm text-red-600">{errors.id_marca}</p>
+              )}
             </div>
 
             <div>
               <Label>Tipo de Pintura</Label>
               <Select
                 value={form.id_tipo}
-                onValueChange={(value) =>
-                  setForm({ ...form, id_tipo: value })
+                onValueChange={(value) => {
+                  setForm({ ...form, id_tipo: value });
+                  setErrors((prev) => { const copy = { ...prev }; delete copy.id_tipo; delete copy.general; return copy; });
+                }
                 }
               >
                 <SelectTrigger>
@@ -193,14 +224,19 @@ function PinturasPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.id_tipo && (
+                <p className="text-sm text-red-600">{errors.id_tipo}</p>
+              )}
             </div>
 
             <div>
               <Label>Color</Label>
               <Select
                 value={form.id_color}
-                onValueChange={(value) =>
-                  setForm({ ...form, id_color: value })
+                onValueChange={(value) => {
+                  setForm({ ...form, id_color: value });
+                  setErrors((prev) => { const copy = { ...prev }; delete copy.id_color; delete copy.general; return copy; });
+                }
                 }
               >
                 <SelectTrigger>
@@ -214,14 +250,19 @@ function PinturasPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.id_color && (
+                <p className="text-sm text-red-600">{errors.id_color}</p>
+              )}
             </div>
 
             <div>
               <Label>Proveedor</Label>
               <Select
                 value={form.id_proveedor}
-                onValueChange={(value) =>
-                  setForm({ ...form, id_proveedor: value })
+                onValueChange={(value) => {
+                  setForm({ ...form, id_proveedor: value });
+                  setErrors((prev) => { const copy = { ...prev }; delete copy.id_proveedor; delete copy.general; return copy; });
+                }
                 }
               >
                 <SelectTrigger>
@@ -235,6 +276,9 @@ function PinturasPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.id_proveedor && (
+                <p className="text-sm text-red-600">{errors.id_proveedor}</p>
+              )}
             </div>
 
             <div>
@@ -243,12 +287,16 @@ function PinturasPage() {
                 type="number"
                 step="0.01"
                 value={form.precio_unitario}
-                onChange={(e) =>
-                  setForm({ ...form, precio_unitario: e.target.value })
-                }
+                onChange={(e) => {
+                  setForm({ ...form, precio_unitario: e.target.value });
+                  setErrors((prev) => { const copy = { ...prev }; delete copy.precio_unitario; delete copy.general; return copy; });
+                }}
                 placeholder="0.00"
                 required
               />
+              {errors.precio_unitario && (
+                <p className="text-sm text-red-600">{errors.precio_unitario}</p>
+              )}
             </div>
                 
             <div>
@@ -257,12 +305,16 @@ function PinturasPage() {
                 type="number"
                 step="0.01"
                 value={form.cantidad_kg}
-                onChange={(e) =>
-                  setForm({ ...form, cantidad_kg: e.target.value })
-                }
+                onChange={(e) => {
+                  setForm({ ...form, cantidad_kg: e.target.value });
+                  setErrors((prev) => { const copy = { ...prev }; delete copy.cantidad_kg; delete copy.general; return copy; });
+                }}
                 placeholder="0.00"
                 required
               />
+              {errors.cantidad_kg && (
+                <p className="text-sm text-red-600">{errors.cantidad_kg}</p>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -287,6 +339,10 @@ function PinturasPage() {
                 </Button>
               )}
             </div>
+
+            {errors.general && (
+              <p className="text-sm text-red-600">{errors.general}</p>
+            )}
 
           </form>
         </div>

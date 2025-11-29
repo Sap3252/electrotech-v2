@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 
 type Proveedor = {
-  id_proveedor: number;
+  id_proveedor: string;
   nombre: string;
   direccion?: string;
 };

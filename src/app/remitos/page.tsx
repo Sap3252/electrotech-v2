@@ -56,6 +56,8 @@ function RemitosPage() {
   >([]);
     const [piezaSeleccionada, setPiezaSeleccionada] = useState("");
     const [cantidad, setCantidad] = useState("");
+    const [erroresDetalle, setErroresDetalle] = useState<{ [key: string]: string }>({});
+    const [erroresForm, setErroresForm] = useState<{ [key: string]: string }>({});
   //================
   //CARGAS INICIALES
   //================
@@ -92,10 +94,30 @@ function RemitosPage() {
   //GUARDAR REMITO
   // =============
   const guardarRemito = async () => {
-    if (!form.id_cliente || !form.fecha_recepcion || detalle.length === 0) {
-      alert("Complete todos los campos");
+    const newErrors: { [key: string]: string } = {};
+
+    if (!form.id_cliente) newErrors.id_cliente = "Debe seleccionar un cliente.";
+    if (!form.fecha_recepcion) newErrors.fecha = "Debe ingresar una fecha.";
+    if (detalle.length === 0) newErrors.detalle = "Debe agregar al menos una pieza.";
+
+    // Validar que la fecha no exceda la fecha actual
+    if (form.fecha_recepcion) {
+      const fechaIngresada = new Date(form.fecha_recepcion);
+      const fechaActual = new Date();
+      // Comparar solo la fecha (ignorar horas/minutos)
+      fechaIngresada.setHours(0, 0, 0, 0);
+      fechaActual.setHours(0, 0, 0, 0);
+      if (fechaIngresada > fechaActual) {
+        newErrors.fecha = "La fecha no puede ser mayor a la fecha actual.";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErroresForm(newErrors);
       return;
     }
+
+    setErroresForm({});
 
     const res = await fetch("/api/remitos", {
       method: "POST",
@@ -159,6 +181,7 @@ function RemitosPage() {
                   onValueChange={async (v) => {
                     setForm({ ...form, id_cliente: v });
                     setDetalle([]);
+                    setErroresForm((prev) => { const copy = { ...prev }; delete copy.id_cliente; return copy; });
                     await cargarPiezasCliente(v);
                   }}
                 >
@@ -173,6 +196,9 @@ function RemitosPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {erroresForm.id_cliente && (
+                  <p className="text-sm text-red-600 mt-1">{erroresForm.id_cliente}</p>
+                )}
               </div>
 
               {/* Fecha */}
@@ -181,12 +207,20 @@ function RemitosPage() {
                 <Input
                   type="datetime-local"
                   value={form.fecha_recepcion}
-                  onChange={(e) =>
-                    setForm({ ...form, fecha_recepcion: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setForm({ ...form, fecha_recepcion: e.target.value });
+                    setErroresForm((prev) => { const copy = { ...prev }; delete copy.fecha; return copy; });
+                  }}
                 />
+                {erroresForm.fecha && (
+                  <p className="text-sm text-red-600 mt-1">{erroresForm.fecha}</p>
+                )}
               </div>
             </div>
+
+            {erroresForm.detalle && (
+              <p className="text-sm text-red-600 mt-4">{erroresForm.detalle}</p>
+            )}
 
             <hr className="my-6" />
 
@@ -227,8 +261,26 @@ function RemitosPage() {
                 <Button
                     className="bg-black text-white"
                     onClick={() => {
+                        const newErrors: { [key: string]: string } = {};
+
+                        if (!piezaSeleccionada) {
+                          newErrors.pieza = "Debe seleccionar una pieza.";
+                        }
+
+                        const cantNum = parseFloat(cantidad);
+                        if (Number.isNaN(cantNum) || cantNum <= 0) {
+                          newErrors.cantidad = "La cantidad debe ser un número mayor a 0.";
+                        }
+
+                        if (Object.keys(newErrors).length > 0) {
+                          setErroresDetalle(newErrors);
+                          return;
+                        }
+
+                        setErroresDetalle({});
+
                         const p = piezasFiltradas.find((x) => String(x.id_pieza) === piezaSeleccionada);
-                        if (!p || !cantidad) return;
+                        if (!p) return;
 
                         setDetalle((prev) => [
                         ...prev,
@@ -259,6 +311,13 @@ function RemitosPage() {
                   ))}
                 </ul>
               </div>
+            )}
+
+            {erroresDetalle.pieza && (
+              <p className="text-sm text-red-600 mt-2">{erroresDetalle.pieza}</p>
+            )}
+            {erroresDetalle.cantidad && (
+              <p className="text-sm text-red-600 mt-2">{erroresDetalle.cantidad}</p>
             )}
 
             <Button

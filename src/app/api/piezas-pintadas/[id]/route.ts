@@ -3,7 +3,8 @@ import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
 import { RowDataPacket } from "mysql2";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) 
+{
   const session = await getSession();
 
   // Verificar acceso al componente Ver Detalle Pieza Pintada (ID 9 tabla)

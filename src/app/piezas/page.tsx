@@ -25,6 +25,8 @@ function PiezasPage() {
     detalle: "",
   });
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   const [editId, setEditId] = useState<number | null>(null);
   const [clientes, setClientes] = useState<any[]>([]);
 
@@ -51,6 +53,26 @@ function PiezasPage() {
   const crearPieza = async (e: any) => {
     e.preventDefault();
 
+    // Client-side validation
+    const newErrors: { [key: string]: string } = {};
+
+    if (!form.id_cliente) newErrors.id_cliente = "Debe seleccionar un cliente.";
+
+    const ancho = parseFloat(String(form.ancho_m));
+    if (Number.isNaN(ancho) || ancho <= 0) newErrors.ancho_m = "El ancho debe ser un número mayor a 0.";
+
+    const alto = parseFloat(String(form.alto_m));
+    if (Number.isNaN(alto) || alto <= 0) newErrors.alto_m = "El alto debe ser un número mayor a 0.";
+
+    if (!String(form.detalle || "").trim()) newErrors.detalle = "El detalle no puede quedar vacío.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
     const res = await fetch("/api/piezas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -60,10 +82,29 @@ function PiezasPage() {
     if (res.ok) {
       setForm({ id_cliente: "", ancho_m: "", alto_m: "", detalle: "" });
       cargar();
+    } else {
+      // show server error if any
+      const text = await res.text().catch(() => "");
+      setErrors({ general: `Error del servidor: ${text || res.statusText}` });
     }
   };
 
   const editarPieza = async () => {
+    // Same validation as crear
+    const newErrors: { [key: string]: string } = {};
+    if (!form.id_cliente) newErrors.id_cliente = "Debe seleccionar un cliente.";
+    const ancho = parseFloat(String(form.ancho_m));
+    if (Number.isNaN(ancho) || ancho <= 0) newErrors.ancho_m = "El ancho debe ser un número mayor a 0.";
+    const alto = parseFloat(String(form.alto_m));
+    if (Number.isNaN(alto) || alto <= 0) newErrors.alto_m = "El alto debe ser un número mayor a 0.";
+    if (!String(form.detalle || "").trim()) newErrors.detalle = "El detalle no puede quedar vacío.";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
     const res = await fetch(`/api/piezas/${editId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -74,6 +115,9 @@ function PiezasPage() {
       setEditId(null);
       setForm({ id_cliente: "", ancho_m: "", alto_m: "", detalle: "" });
       cargar();
+    } else {
+      const text = await res.text().catch(() => "");
+      setErrors({ general: `Error del servidor: ${text || res.statusText}` });
     }
   };
 
@@ -84,7 +128,14 @@ function PiezasPage() {
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
-        setForm({ ...form, [name]: value });
+      setForm({ ...form, [name]: value });
+      // clear field error on change
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        delete copy.general;
+        return copy;
+      });
     };
 
   return (
@@ -110,9 +161,15 @@ function PiezasPage() {
           <CardContent>
             <form className="flex flex-col gap-4" onSubmit={crearPieza}>
             <Select
-            onValueChange={(value) =>
-                setForm({ ...form, id_cliente: value })
-            }
+            onValueChange={(value) => {
+                setForm({ ...form, id_cliente: value });
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  delete copy.id_cliente;
+                  delete copy.general;
+                  return copy;
+                });
+            }}
             >
             <SelectTrigger>
                 <SelectValue placeholder="Seleccione un cliente" />
@@ -134,6 +191,9 @@ function PiezasPage() {
               onChange={handleChange}
               required
             />
+            {errors.ancho_m && (
+              <p className="text-sm text-red-600">{errors.ancho_m}</p>
+            )}
 
             <Input
               placeholder="Alto (m)"
@@ -142,6 +202,9 @@ function PiezasPage() {
               onChange={handleChange}
               required
             />
+            {errors.alto_m && (
+              <p className="text-sm text-red-600">{errors.alto_m}</p>
+            )}
 
             <Input
               placeholder="Detalle"
@@ -149,6 +212,17 @@ function PiezasPage() {
               value={form.detalle}
               onChange={handleChange}
             />
+            {errors.detalle && (
+              <p className="text-sm text-red-600">{errors.detalle}</p>
+            )}
+
+            {errors.id_cliente && (
+              <p className="text-sm text-red-600">{errors.id_cliente}</p>
+            )}
+
+            {errors.general && (
+              <p className="text-sm text-red-600">{errors.general}</p>
+            )}
 
             {!editId ? (
               <Button type="submit">Agregar Pieza</Button>

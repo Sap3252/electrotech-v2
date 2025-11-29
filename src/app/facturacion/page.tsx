@@ -61,6 +61,7 @@ function FacturacionPage() {
   const [selectedPieza, setSelectedPieza] = useState<PiezaDisponible | null>(null);
   const [cantidad, setCantidad] = useState(1);
   const [precioUnitario, setPrecioUnitario] = useState(0);
+  const [erroresItem, setErroresItem] = useState<{ [key: string]: string }>({});
 
   // ===============
   //CARGAS INICIALES
@@ -107,9 +108,29 @@ function FacturacionPage() {
   //AGREGAR ÍTEM A LA FACTURA
   // ========================
   const agregarItem = () => {
-    if (!selectedPieza) return alert("Seleccione una pieza");
-    if (cantidad < 1) return alert("Cantidad inválida");
+    const newErrors: { [key: string]: string } = {};
 
+    if (!selectedPieza) {
+      newErrors.pieza = "Debe seleccionar una pieza.";
+    }
+
+    if (Number.isNaN(cantidad) || cantidad <= 0) {
+      newErrors.cantidad = "La cantidad debe ser un número mayor a 0.";
+    }
+
+    if (Number.isNaN(precioUnitario) || precioUnitario <= 0) {
+      newErrors.precio = "El precio debe ser un número mayor a 0.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErroresItem(newErrors);
+      return;
+    }
+
+    setErroresItem({});
+
+    if (!selectedPieza) return;
+    
     const disponible =
       selectedPieza.cantidad - selectedPieza.cantidad_facturada;
 
@@ -251,29 +272,54 @@ function FacturacionPage() {
               <div>
                 <Label>Cantidad</Label>
                 <Input
-                  type="number"
-                  min={1}
-                  value={cantidad}
-                  onChange={(e) => setCantidad(Number(e.target.value))}
+                  type="text"
+                  inputMode="numeric"
+                  value={cantidad === 0 ? "" : cantidad}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Allow empty string or any numeric value
+                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                      setCantidad(val === "" ? 0 : Number(val));
+                      setErroresItem((prev) => { const copy = { ...prev }; delete copy.cantidad; return copy; });
+                    }
+                  }}
+                  placeholder="0"
                 />
+                {erroresItem.cantidad && (
+                  <p className="text-sm text-red-600 mt-1">{erroresItem.cantidad}</p>
+                )}
               </div>
 
               {/* PRECIO */}
               <div>
                 <Label>Precio Unitario</Label>
                 <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={precioUnitario}
-                  onChange={(e) => setPrecioUnitario(Number(e.target.value))}
+                  type="text"
+                  inputMode="decimal"
+                  value={precioUnitario === 0 ? "" : precioUnitario}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Allow empty string or numeric values with decimals
+                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                      setPrecioUnitario(val === "" ? 0 : Number(val));
+                      setErroresItem((prev) => { const copy = { ...prev }; delete copy.precio; return copy; });
+                    }
+                  }}
+                  placeholder="0.00"
                 />
+                {erroresItem.precio && (
+                  <p className="text-sm text-red-600 mt-1">{erroresItem.precio}</p>
+                )}
               </div>
             </div>
 
             <Button onClick={agregarItem} className="bg-black text-white">
               Agregar Item
             </Button>
+
+            {erroresItem.pieza && (
+              <p className="text-sm text-red-600 mt-2">{erroresItem.pieza}</p>
+            )}
 
             {/* ITEMS LISTADOS */}
             {items.length > 0 && (
