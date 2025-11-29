@@ -328,9 +328,17 @@ function FacturacionPage() {
 
                 <ul className="space-y-2">
                   {items.map((i, idx) => (
-                    <li key={idx}>
-                      • {i.descripcion} — {i.cantidad} u — $
-                      {i.precio_unitario} = ${i.subtotal}
+                    <li key={idx} className="flex justify-between items-center">
+                      <span>• {i.descripcion} — {i.cantidad} u — ${i.precio_unitario} = ${i.subtotal}</span>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setItems((prev) => prev.filter((_, index) => index !== idx));
+                        }}
+                      >
+                        Eliminar
+                      </Button>
                     </li>
                   ))}
                 </ul>

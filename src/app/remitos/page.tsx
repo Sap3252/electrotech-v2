@@ -303,10 +303,19 @@ function RemitosPage() {
             {detalle.length > 0 && (
               <div className="mt-4 bg-slate-50 p-4 rounded border">
                 <h4 className="font-semibold mb-2">Detalle cargado:</h4>
-                <ul>
+                <ul className="space-y-2">
                   {detalle.map((d, i) => (
-                    <li key={i}>
-                      • {d.nombre} — {d.cantidad} unidades
+                    <li key={i} className="flex justify-between items-center">
+                      <span>• {d.nombre} — {d.cantidad} unidades</span>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setDetalle((prev) => prev.filter((_, idx) => idx !== i));
+                        }}
+                      >
+                        Eliminar
+                      </Button>
                     </li>
                   ))}
                 </ul>
