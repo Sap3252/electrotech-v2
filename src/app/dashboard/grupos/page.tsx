@@ -307,7 +307,7 @@ export default function GruposPage() {
                           >
                             Editar
                           </Button>
-                          {grupo.id_grupo !== 1 && ( // No permitir eliminar Admin
+                          {grupo.nombre !== 'Admin' && ( // No permitir eliminar Admin
                             <Button
                               size="sm"
                               variant="destructive"

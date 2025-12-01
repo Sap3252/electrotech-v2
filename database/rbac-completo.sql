@@ -117,13 +117,13 @@ INSERT INTO Formulario (id_formulario, id_modulo, nombre, ruta, orden) VALUES
 (10, 3, 'Ventas por Cliente', '/reportes/ventas-por-cliente', 3),
 (11, 3, 'Evolución de Ventas', '/reportes/evolucion-ventas', 4),
 (12, 3, 'Consumo Pintura por Mes', '/reportes/pintura-por-mes', 5),
-(13, 3, 'Ventas Cliente Específico', '/reportes/ventas-cliente-especifico', 6)
-ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
+(13, 3, 'Ventas Cliente Específico', '/reportes/ventas-cliente-especifico', 6),
+(15, 3, 'Reportes Principal', '/reportes', 0)
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), id_modulo=VALUES(id_modulo);
 
 -- Módulo Administración (id_modulo=4)
 INSERT INTO Formulario (id_formulario, id_modulo, nombre, ruta, orden) VALUES
-(14, 4, 'Usuarios', '/dashboard/usuarios', 1),
-(15, 4, 'Grupos', '/dashboard/grupos', 2)
+(14, 4, 'Usuarios', '/dashboard/usuarios', 1)
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
 -- ==========================================
@@ -151,7 +151,7 @@ INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
 (8, 3, 'Formulario Registrar Producción', 'formulario'),
 (9, 3, 'Tabla Historial Producción', 'tabla'),
 (23, 3, 'Botón Eliminar Pieza Pintada', 'boton')
-ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), id_formulario=VALUES(id_formulario), tipo=VALUES(tipo);
 
 -- Componentes para Remitos (id_formulario=5)
 INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
@@ -176,8 +176,9 @@ INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
 (20, 10, 'Acceso Ventas por Cliente', 'acceso'),
 (21, 11, 'Acceso Evolución de Ventas', 'acceso'),
 (22, 12, 'Acceso Consumo Pintura por Mes', 'acceso'),
-(27, 13, 'Acceso Ventas Cliente Específico', 'acceso')
-ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
+(27, 13, 'Acceso Ventas Cliente Específico', 'acceso'),
+(29, 15, 'Página Principal Reportes', 'otro')
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), id_formulario=VALUES(id_formulario), tipo=VALUES(tipo);
 
 -- ==========================================
 -- PERMISOS ADMIN
