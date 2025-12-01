@@ -56,6 +56,8 @@ function PiezasPintadasPage() {
   const [piezas, setPiezas] = useState<Pieza[]>([]);
   const [pinturas, setPinturas] = useState<Pintura[]>([]);
   const [lotes, setLotes] = useState<PiezaPintadaRow[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
 
   const [idPieza, setIdPieza] = useState<number | "">("");
   const [idPintura, setIdPintura] = useState<number | "">("");
@@ -349,30 +351,73 @@ function PiezasPintadasPage() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-1">Fecha</th>
-                      <th className="text-left py-1">Pieza</th>
+                          <th className="text-left py-1">Pieza</th>
+                          <th className="text-left py-1">Cliente</th>
                       <th className="text-left py-1">Pintura</th>
                       <th className="text-right py-1">Cant.</th>
                       <th className="text-right py-1">Consumo (kg)</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {lotes.map((l) => (
-                      <tr key={l.id_pieza_pintada} className="border-b">
-                        <td className="py-1">{l.fecha}</td>
-                        <td className="py-1">{l.pieza_detalle}</td>
-                        <td className="py-1">
-                          {l.marca} / {l.color} / {l.tipo}
-                        </td>
-                        <td className="py-1 text-right">{l.cantidad}</td>
-                        <td className="py-1 text-right">
-                          {l.consumo_estimado_kg} kg
-                        </td>
-                      </tr>
-                    ))}
+                        {(() => {
+                          const total = lotes.length;
+                          const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                          const page = Math.min(Math.max(1, currentPage), totalPages);
+                          const start = (page - 1) * pageSize;
+                          const visibles = lotes.slice(start, start + pageSize);
+
+                          return visibles.map((l) => (
+                            <tr key={l.id_pieza_pintada} className="border-b">
+                              <td className="py-1">{l.fecha}</td>
+                              <td className="py-1">{l.pieza_detalle}</td>
+                              <td className="py-1">{(l as any).cliente_nombre || "-"}</td>
+                              <td className="py-1">
+                                {l.marca} / {l.color} / {l.tipo}
+                              </td>
+                              <td className="py-1 text-right">{l.cantidad}</td>
+                              <td className="py-1 text-right">
+                                {l.consumo_estimado_kg} kg
+                              </td>
+                            </tr>
+                          ));
+                        })()}
                   </tbody>
                 </table>
               </div>
             )}
+                {/* Paginación */}
+                {lotes.length > 0 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      {(() => {
+                        const total = lotes.length;
+                        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                        const page = Math.min(Math.max(1, currentPage), totalPages);
+                        const start = (page - 1) * pageSize + 1;
+                        const end = Math.min(total, start + pageSize - 1);
+                        return `Mostrando ${start} - ${end} de ${total}`;
+                      })()}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage <= 1}
+                      >
+                        ← Anterior
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage((p) => p + 1)}
+                        disabled={currentPage * pageSize >= lotes.length}
+                      >
+                        Siguiente →
+                      </Button>
+                    </div>
+                  </div>
+                )}
           </CardContent>
         </Card>
         </ProtectedComponent>

@@ -43,6 +43,8 @@ function RemitosPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [piezasFiltradas, setPiezasFiltradas] = useState<Pieza[]>([]);
   const [remitos, setRemitos] = useState<Remito[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
 
   const [form, setForm] = useState({
     id_cliente: "",
@@ -79,7 +81,10 @@ function RemitosPage() {
 
   const cargarRemitos = async () => {
     const res = await fetch("/api/remitos");
-    if (res.ok) setRemitos(await res.json());
+    if (res.ok) {
+      setRemitos(await res.json());
+      setCurrentPage(1);
+    }
   };
 
   useEffect(() => {
@@ -361,33 +366,63 @@ function RemitosPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {remitos.map((r) => (
-                    <tr key={r.id_remito} className="border-b">
-                      <td className="p-2">{r.id_remito}</td>
-                      <td className="p-2">
-                        {r.cliente_nombre}
-                      </td>
-                      <td className="p-2">{r.fecha_recepcion}</td>
-                      <td className="p-2">{r.cantidad_piezas}</td>
-                      <td className="p-2">
-                        <ProtectedComponent componenteId={12}>
-                          <Button
-                            size="sm"
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => verDetalle(r.id_remito)}
-                          >
-                            Ver Detalle
-                          </Button>
-                        </ProtectedComponent>
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const total = remitos.length;
+                    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                    const page = Math.min(Math.max(1, currentPage), totalPages);
+                    const start = (page - 1) * pageSize;
+                    const visibles = remitos.slice(start, start + pageSize);
+                    return visibles.map((r) => (
+                      <tr key={r.id_remito} className="border-b">
+                        <td className="p-2">{r.id_remito}</td>
+                        <td className="p-2">
+                          {r.cliente_nombre}
+                        </td>
+                        <td className="p-2">{r.fecha_recepcion}</td>
+                        <td className="p-2">{r.cantidad_piezas}</td>
+                        <td className="p-2">
+                          <ProtectedComponent componenteId={12}>
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                              onClick={() => verDetalle(r.id_remito)}
+                            >
+                              Ver Detalle
+                            </Button>
+                          </ProtectedComponent>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
         </ProtectedComponent>
+
+        {/* ================================
+            PAGINACIÓN REMITOS
+        =================================== */}
+        {remitos.length > 0 && (
+          <div className="flex justify-center gap-4 mt-4">
+            <Button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
+              ← Anterior
+            </Button>
+            <span className="flex items-center px-4">
+              Página {currentPage} de {Math.max(1, Math.ceil(remitos.length / pageSize))}
+            </span>
+            <Button
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={currentPage * pageSize >= remitos.length}
+            >
+              Siguiente →
+            </Button>
+          </div>
+        )}
 
         {/* ================================
             MODAL DETALLE

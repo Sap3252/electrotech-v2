@@ -18,6 +18,8 @@ import ProtectedComponent from "@/components/ProtectedComponent";
 function PiezasPage() {
   const router = useRouter();
   const [piezas, setPiezas] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
   const [form, setForm] = useState({
     id_cliente: "",
     ancho_m: "",
@@ -33,7 +35,11 @@ function PiezasPage() {
   const cargar = async () => {
     const res = await fetch("/api/piezas");
     const data = await res.json();
-    setPiezas(data);
+    // Mostrar los últimos registros primero (asumiendo id_pieza incremental)
+    const sorted = Array.isArray(data) ? data.slice().sort((a: any, b: any) => (b.id_pieza || 0) - (a.id_pieza || 0)) : [];
+    setPiezas(sorted);
+    // Resetear a primera página al recargar
+    setCurrentPage(1);
   };
 
   const cargarClientes = async () => {
@@ -257,13 +263,23 @@ function PiezasPage() {
             </thead>
 
             <tbody>
-              {piezas.map((p) => (
-                <tr key={p.id_pieza} className="border-b">
-                  <td>{p.id_pieza}</td>
-                  <td>{p.id_cliente}</td>
-                  <td>{p.ancho_m} m</td>
-                  <td>{p.alto_m} m</td>
-                  <td>{p.detalle}</td>
+              {(() => {
+                const total = piezas.length;
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                const page = Math.min(Math.max(1, currentPage), totalPages);
+                const start = (page - 1) * pageSize;
+                const visibles = piezas.slice(start, start + pageSize);
+
+                return visibles.map((p) => (
+                  <tr key={p.id_pieza} className="border-b">
+                    <td>{p.id_pieza}</td>
+                    <td>{(() => {
+                      const cliente = clientes.find((c) => String(c.id_cliente) === String(p.id_cliente));
+                      return cliente ? cliente.nombre : p.id_cliente;
+                    })()}</td>
+                    <td>{p.ancho_m} m</td>
+                    <td>{p.alto_m} m</td>
+                    <td>{p.detalle}</td>
 
                   <td className="flex gap-2 py-2">
                     <ProtectedComponent componenteId={3}>
@@ -293,9 +309,43 @@ function PiezasPage() {
                     </ProtectedComponent>
                   </td>
                 </tr>
-              ))}
+                ));
+              })()}
             </tbody>
           </table>
+
+          {/* Paginación */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              {(() => {
+                const total = piezas.length;
+                if (total === 0) return "Sin registros.";
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                const page = Math.min(Math.max(1, currentPage), totalPages);
+                const start = (page - 1) * pageSize + 1;
+                const end = Math.min(total, start + pageSize - 1);
+                return `Mostrando ${start} - ${end} de ${total}`;
+              })()}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+              >
+                ← Anterior
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => p + 1)}
+                disabled={currentPage * pageSize >= piezas.length}
+              >
+                Siguiente →
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
       </ProtectedComponent>

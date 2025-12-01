@@ -11,7 +11,7 @@ export async function GET(
   // Verificar acceso al componente Ver Detalle de remitos (ID 12)
   if (!session || !(await hasPermission(session, 12))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
-  }
+}
 
   const { id } = await params;
 

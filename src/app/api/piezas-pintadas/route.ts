@@ -25,11 +25,14 @@ export async function GET() {
         pp.cantidad,
         pp.consumo_estimado_kg,
         pz.detalle AS pieza_detalle,
+        pz.id_cliente AS pieza_id_cliente,
+        cl.nombre AS cliente_nombre,
         m.nombre AS marca,
         c.nombre AS color,
         t.nombre AS tipo
       FROM PiezaPintada pp
       JOIN Pieza pz ON pz.id_pieza = pp.id_pieza
+      JOIN Cliente cl ON cl.id_cliente = pz.id_cliente
       JOIN Pintura pt ON pt.id_pintura = pp.id_pintura
       JOIN Marca m ON m.id_marca = pt.id_marca
       JOIN Color c ON c.id_color = pt.id_color

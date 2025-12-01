@@ -43,6 +43,8 @@ function FacturacionPage() {
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [detalleFactura, setDetalleFactura] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
 
   const [form, setForm] = useState({
     id_cliente: "",
@@ -84,7 +86,10 @@ function FacturacionPage() {
 
   const cargarFacturas = async () => {
     const res = await fetch("/api/facturas/listado");
-    if (res.ok) setFacturas(await res.json());
+    if (res.ok) {
+      setFacturas(await res.json());
+      setCurrentPage(1);
+    }
   };
 
   useEffect(() => {
@@ -380,34 +385,64 @@ function FacturacionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {facturas.map((f) => (
-                    <tr key={f.id_factura} className="border-b">
-                      <td className="p-2">{f.id_factura}</td>
-                      <td className="p-2">{f.cliente_nombre}</td>
-                      <td className="p-2">{f.fecha}</td>
-                      <td className="p-2">${f.total}</td>
-                      <td className="p-2">
-                        <ProtectedComponent componenteId={16}>
-                          <Button
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                            size="sm"
-                            onClick={() => {
-                              setDetalleFactura(f.id_factura);
-                              setModalOpen(true);
-                            }}
-                          >
-                          Ver Detalle
-                        </Button>
-                        </ProtectedComponent>
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const total = facturas.length;
+                    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                    const page = Math.min(Math.max(1, currentPage), totalPages);
+                    const start = (page - 1) * pageSize;
+                    const visibles = facturas.slice(start, start + pageSize);
+                    return visibles.map((f) => (
+                      <tr key={f.id_factura} className="border-b">
+                        <td className="p-2">{f.id_factura}</td>
+                        <td className="p-2">{f.cliente_nombre}</td>
+                        <td className="p-2">{f.fecha}</td>
+                        <td className="p-2">${f.total}</td>
+                        <td className="p-2">
+                          <ProtectedComponent componenteId={16}>
+                            <Button
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                              size="sm"
+                              onClick={() => {
+                                setDetalleFactura(f.id_factura);
+                                setModalOpen(true);
+                              }}
+                            >
+                            Ver Detalle
+                          </Button>
+                          </ProtectedComponent>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
         </ProtectedComponent>
+
+        {/* ================================
+            PAGINACIÓN FACTURAS
+        =================================== */}
+        {facturas.length > 0 && (
+          <div className="flex justify-center gap-4 mt-4">
+            <Button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
+              ← Anterior
+            </Button>
+            <span className="flex items-center px-4">
+              Página {currentPage} de {Math.max(1, Math.ceil(facturas.length / pageSize))}
+            </span>
+            <Button
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={currentPage * pageSize >= facturas.length}
+            >
+              Siguiente →
+            </Button>
+          </div>
+        )}
 
         {/* MODAL DETALLE FACTURA */}
         <ModalDetalleFactura

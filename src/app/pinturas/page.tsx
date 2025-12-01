@@ -24,6 +24,8 @@ function PinturasPage() {
   const [colores, setColores] = useState([]);
   const [tipos, setTipos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
   const [editId, setEditId] = useState<number | null>(null);
   
   const [form, setForm] = useState({
@@ -39,7 +41,10 @@ function PinturasPage() {
   const cargarPinturas = async () => {
     const res = await fetch("/api/pinturas");
     if (res.ok) {
-      setPinturas(await res.json());
+      const data = await res.json();
+      const sorted = Array.isArray(data) ? data.slice().sort((a: any, b: any) => (b.id_pintura || 0) - (a.id_pintura || 0)) : [];
+      setPinturas(sorted);
+      setCurrentPage(1);
     }
   };
 
@@ -367,41 +372,81 @@ function PinturasPage() {
                 </tr>
               </thead>
               <tbody>
-                {pinturas.map((p: any) => (
-                  <tr key={p.id_pintura} className="border-b">
-                    <td className="p-2">{p.id_pintura}</td>
-                    <td className="p-2">{p.marca || p.id_marca}</td>
-                    <td className="p-2">{p.tipo || p.id_tipo}</td>
-                    <td className="p-2">{p.color || p.id_color}</td>
-                    <td className="p-2">{p.proveedor || p.id_proveedor}</td>
-                    <td className="p-2">${p.precio_unitario}</td>
-                    <td className="p-2">{p.cantidad_kg} kg</td>
-                    <td className="p-2">
-                      <div className="flex gap-2">
-                        <ProtectedComponent componenteId={24}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => editarPintura(p)}
-                          >
-                            Editar
-                          </Button>
-                        </ProtectedComponent>
-                        <ProtectedComponent componenteId={7}>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => eliminarPintura(p.id_pintura)}
-                          >
-                            Eliminar
-                          </Button>
-                        </ProtectedComponent>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const total = pinturas.length;
+                  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                  const page = Math.min(Math.max(1, currentPage), totalPages);
+                  const start = (page - 1) * pageSize;
+                  const visibles = pinturas.slice(start, start + pageSize);
+
+                  return visibles.map((p: any) => (
+                    <tr key={p.id_pintura} className="border-b">
+                      <td className="p-2">{p.id_pintura}</td>
+                      <td className="p-2">{p.marca || (marcas.find((m: any) => String(m.id_marca) === String(p.id_marca))?.nombre) || p.id_marca}</td>
+                      <td className="p-2">{p.tipo || (tipos.find((t: any) => String(t.id_tipo) === String(p.id_tipo))?.nombre) || p.id_tipo}</td>
+                      <td className="p-2">{p.color || (colores.find((c: any) => String(c.id_color) === String(p.id_color))?.nombre) || p.id_color}</td>
+                      <td className="p-2">{p.proveedor || (proveedores.find((pr: any) => String(pr.id_proveedor) === String(p.id_proveedor))?.nombre) || p.id_proveedor}</td>
+                      <td className="p-2">${p.precio_unitario}</td>
+                      <td className="p-2">{p.cantidad_kg} kg</td>
+                      <td className="p-2">
+                        <div className="flex gap-2">
+                          <ProtectedComponent componenteId={24}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => editarPintura(p)}
+                            >
+                              Editar
+                            </Button>
+                          </ProtectedComponent>
+                          <ProtectedComponent componenteId={7}>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => eliminarPintura(p.id_pintura)}
+                            >
+                              Eliminar
+                            </Button>
+                          </ProtectedComponent>
+                        </div>
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
+          </div>
+          {/* Paginación */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              {(() => {
+                const total = pinturas.length;
+                if (total === 0) return "Sin registros.";
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                const page = Math.min(Math.max(1, currentPage), totalPages);
+                const start = (page - 1) * pageSize + 1;
+                const end = Math.min(total, start + pageSize - 1);
+                return `Mostrando ${start} - ${end} de ${total}`;
+              })()}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+              >
+                ← Anterior
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => p + 1)}
+                disabled={currentPage * pageSize >= pinturas.length}
+              >
+                Siguiente →
+              </Button>
+            </div>
           </div>
         </div>
         </ProtectedComponent>
