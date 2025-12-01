@@ -167,16 +167,17 @@ function PiezasPage() {
           <CardContent>
             <form className="flex flex-col gap-4" onSubmit={crearPieza}>
             <Select
-            onValueChange={(value) => {
-                setForm({ ...form, id_cliente: value });
-                setErrors((prev) => {
-                  const copy = { ...prev };
-                  delete copy.id_cliente;
-                  delete copy.general;
-                  return copy;
-                });
-            }}
-            >
+                value={String(form.id_cliente)}
+                onValueChange={(value) => {
+                  setForm({ ...form, id_cliente: value });
+                  setErrors((prev) => {
+                    const copy = { ...prev };
+                    delete copy.id_cliente;
+                    delete copy.general;
+                    return copy;
+                  });
+                }}
+              >
             <SelectTrigger>
                 <SelectValue placeholder="Seleccione un cliente" />
             </SelectTrigger>
@@ -288,7 +289,7 @@ function PiezasPage() {
                         onClick={() => {
                           setEditId(p.id_pieza);
                           setForm({
-                            id_cliente: p.id_cliente,
+                              id_cliente: String(p.id_cliente),
                             ancho_m: p.ancho_m,
                             alto_m: p.alto_m,
                             detalle: p.detalle,

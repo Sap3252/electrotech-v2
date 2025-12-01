@@ -118,7 +118,9 @@ export async function hasPermission(
       `SELECT COUNT(*) as count
        FROM GrupoComponente gc
        JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
-       WHERE gu.id_usuario = ? AND gc.id_componente = ?`,
+       JOIN Grupo g ON g.id_grupo = gc.id_grupo
+       -- Solo considerar grupos con estado ACTIVO (id_estado = 1)
+       WHERE gu.id_usuario = ? AND gc.id_componente = ? AND g.id_estado = 1`,
       [session.id_usuario, componenteId]
     );
 
@@ -153,6 +155,7 @@ export async function hasFormularioAccess(
        JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
        JOIN Componente c ON c.id_componente = gc.id_componente
        JOIN Formulario f ON f.id_formulario = c.id_formulario
+       JOIN Grupo g ON g.id_grupo = gc.id_grupo
        WHERE gu.id_usuario = ? AND f.ruta = ?`,
       [session.id_usuario, formularioRuta]
     );
@@ -201,10 +204,11 @@ export async function getAccesibleFormularios(
          f.orden as formulario_orden
        FROM GrupoComponente gc
        JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
+       JOIN Grupo g ON g.id_grupo = gc.id_grupo
        JOIN Componente c ON c.id_componente = gc.id_componente
        JOIN Formulario f ON f.id_formulario = c.id_formulario
        JOIN Modulo m ON m.id_modulo = f.id_modulo
-       WHERE gu.id_usuario = ? AND f.activo = TRUE AND m.activo = TRUE
+       WHERE gu.id_usuario = ? AND f.activo = TRUE AND m.activo = TRUE AND g.id_estado = 1
        ORDER BY m.orden, f.orden`,
       [session.id_usuario]
     );

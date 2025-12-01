@@ -17,6 +17,9 @@ export default function ProtectedPage({
   const router = useRouter();
   const [verificando, setVerificando] = useState(true);
   const [tieneAcceso, setTieneAcceso] = useState(false);
+  const [gruposInactivas, setGruposInactivas] = useState<
+    { id_grupo: number; nombre: string; id_estado: number; estado: string }[]
+  >([]);
 
   const verificarAcceso = useCallback(async () => {
     try {
@@ -36,9 +39,20 @@ export default function ProtectedPage({
 
       const data = await res.json();
 
+      // Guardar grupos inactivas relacionadas con la ruta si vienen
+      if (data.grupos_inactivas_ruta && Array.isArray(data.grupos_inactivas_ruta)) {
+        setGruposInactivas(data.grupos_inactivas_ruta);
+      }
+
       if (!data.tieneAcceso) {
         // Sin permisos -> redirigir al dashboard
-        alert("No tienes permisos para acceder a esta página");
+        // Mostrar mensaje de grupo inactivo si aplica
+        if (data.grupos_inactivas_ruta && data.grupos_inactivas_ruta.length > 0) {
+          const nombres = data.grupos_inactivas_ruta.map((g: any) => `${g.nombre} (${g.estado || 'inactivo'})`).join(', ');
+          alert(`Su(s) grupo(s) ${nombres} están inactivos o suspendidos para este formulario. Consulte con el administrador.`);
+        } else {
+          alert("No tienes permisos para acceder a esta página");
+        }
         router.push("/dashboard");
         return;
       }
@@ -68,5 +82,14 @@ export default function ProtectedPage({
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {gruposInactivas.length > 0 && (
+        <div className="bg-yellow-100 border border-yellow-300 text-yellow-900 p-4 rounded mb-4">
+          <strong>Atención:</strong> Su(s) grupo(s) {gruposInactivas.map(g => g.nombre).join(', ')} están inactivos o suspendidos. Por favor consulte con el administrador.
+        </div>
+      )}
+      {children}
+    </>
+  );
 }
