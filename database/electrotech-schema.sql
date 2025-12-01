@@ -197,7 +197,7 @@ CREATE TABLE `stockpieza` (
 
 -- Tabla: Proveedor
 CREATE TABLE `proveedor` (
-  `id_proveedor` VARCHAR(20) NOT NULL,
+  `id_proveedor` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(150) NOT NULL,
   `direccion` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`id_proveedor`)
@@ -230,7 +230,7 @@ CREATE TABLE `pintura` (
   `id_marca` INT NOT NULL,
   `id_color` INT NOT NULL,
   `id_tipo` INT NOT NULL,
-  `id_proveedor` VARCHAR(20) NOT NULL,
+  `id_proveedor` INT NOT NULL,
   `cantidad_kg` DECIMAL(10,2) NOT NULL,
   `precio_unitario` DECIMAL(10,2) NOT NULL,
   PRIMARY KEY (`id_pintura`),
@@ -246,7 +246,7 @@ CREATE TABLE `pintura` (
 
 -- Tabla: ProveedorPintura (relación muchos a muchos)
 CREATE TABLE `proveedorpintura` (
-  `id_proveedor` VARCHAR(20) NOT NULL,
+  `id_proveedor` INT NOT NULL,
   `id_pintura` INT NOT NULL,
   PRIMARY KEY (`id_proveedor`,`id_pintura`),
   KEY `id_pintura` (`id_pintura`),

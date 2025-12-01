@@ -23,7 +23,7 @@ export async function GET() {
       JOIN Color c ON c.id_color = p.id_color
       JOIN TipoPintura t ON t.id_tipo = p.id_tipo
       GROUP BY p.id_pintura, mes
-      ORDER BY mes DESC, total_kg DESC
+      ORDER BY mes ASC, total_kg DESC
     `);
 
     return NextResponse.json(rows);

@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ModalAuditorias } from "@/components/usuarios/ModalAuditorias";
 
 type Usuario = {
   id_usuario: number;
@@ -37,6 +38,13 @@ export default function UsuariosPage() {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+
+  // Modal de auditorías
+  const [modalAuditoriasOpen, setModalAuditoriasOpen] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<{
+    id: number;
+    nombre: string;
+  } | null>(null);
 
   // Formulario
   const [editando, setEditando] = useState(false);
@@ -90,6 +98,18 @@ export default function UsuariosPage() {
     setNombre("");
     setApellido("");
     setGruposSeleccionados(new Set());
+  };
+
+  const verAuditorias = (usuario: Usuario) => {
+    const nombreCompleto = usuario.nombre || usuario.apellido
+      ? `${usuario.nombre || ""} ${usuario.apellido || ""}`.trim()
+      : usuario.email;
+    
+    setUsuarioSeleccionado({
+      id: usuario.id_usuario,
+      nombre: nombreCompleto,
+    });
+    setModalAuditoriasOpen(true);
   };
 
   const editarUsuario = async (id: number) => {
@@ -210,7 +230,7 @@ export default function UsuariosPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6">
         {/* Formulario */}
         <Card>
           <CardHeader>
@@ -346,6 +366,13 @@ export default function UsuariosPage() {
                           </Button>
                           <Button
                             size="sm"
+                            variant="secondary"
+                            onClick={() => verAuditorias(usuario)}
+                          >
+                            Auditorías
+                          </Button>
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => eliminarUsuario(usuario.id_usuario)}
                           >
@@ -361,6 +388,14 @@ export default function UsuariosPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Auditorías */}
+      <ModalAuditorias
+        usuarioId={usuarioSeleccionado?.id || null}
+        usuarioNombre={usuarioSeleccionado?.nombre || ""}
+        open={modalAuditoriasOpen}
+        onOpenChange={setModalAuditoriasOpen}
+      />
     </div>
   );
 }

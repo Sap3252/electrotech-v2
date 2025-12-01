@@ -417,32 +417,42 @@ function FacturacionPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Paginación */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                {(() => {
+                  const total = facturas.length;
+                  if (total === 0) return "Sin registros.";
+                  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                  const page = Math.min(Math.max(1, currentPage), totalPages);
+                  const start = (page - 1) * pageSize + 1;
+                  const end = Math.min(total, start + pageSize - 1);
+                  return `Mostrando ${start} - ${end} de ${total}`;
+                })()}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  ← Anterior
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={currentPage * pageSize >= facturas.length}
+                >
+                  Siguiente →
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
         </ProtectedComponent>
-
-        {/* ================================
-            PAGINACIÓN FACTURAS
-        =================================== */}
-        {facturas.length > 0 && (
-          <div className="flex justify-center gap-4 mt-4">
-            <Button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage <= 1}
-            >
-              ← Anterior
-            </Button>
-            <span className="flex items-center px-4">
-              Página {currentPage} de {Math.max(1, Math.ceil(facturas.length / pageSize))}
-            </span>
-            <Button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage * pageSize >= facturas.length}
-            >
-              Siguiente →
-            </Button>
-          </div>
-        )}
 
         {/* MODAL DETALLE FACTURA */}
         <ModalDetalleFactura

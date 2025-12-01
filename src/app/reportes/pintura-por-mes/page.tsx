@@ -22,6 +22,7 @@ type ChartData = {
 function ReportePinturaPorMes() {
   const router = useRouter();
   const [data, setData] = useState<ChartData[]>([]);
+  const [pinturas, setPinturas] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -35,15 +36,33 @@ function ReportePinturaPorMes() {
       .then((res: PinturaMesData[]) => {
         if (Array.isArray(res)) {
           
+          // Obtener todas las pinturas únicas
+          const todasPinturas = [...new Set(res.map(item => item.pintura))];
+          setPinturas(todasPinturas);
+          
+          // Obtener todos los meses únicos
+          const todosMeses = [...new Set(res.map(item => item.mes))].sort();
+          
           // Agrupar por mes
           const mesesMap: Record<string, ChartData> = {};
+          
+          // Inicializar todos los meses con todas las pinturas en 0
+          todosMeses.forEach(mes => {
+            mesesMap[mes] = { mes };
+            todasPinturas.forEach(pintura => {
+              mesesMap[mes][pintura] = 0;
+            });
+          });
+          
+          // Llenar con los datos reales
           res.forEach(item => {
-            if (!mesesMap[item.mes]) {
-              mesesMap[item.mes] = { mes: item.mes };
-            }
             mesesMap[item.mes][item.pintura] = Number(item.total_kg);
           });
-          const datosConvertidos = Object.values(mesesMap);
+          
+          // Ordenar por mes (formato YYYY-MM)
+          const datosConvertidos = Object.values(mesesMap).sort((a, b) => 
+            a.mes.localeCompare(b.mes)
+          );
           setData(datosConvertidos);
         } else {
           setError("Error al cargar datos");
@@ -72,13 +91,14 @@ function ReportePinturaPorMes() {
                   <YAxis />
                   <Tooltip formatter={(value) => `${value} kg`} />
                   <Legend />
-                  {Object.keys(data[0] || {}).filter(k => k !== 'mes').map((pintura, idx) => (
+                  {pinturas.map((pintura, idx) => (
                     <Line 
                       key={pintura} 
                       type="monotone" 
                       dataKey={pintura} 
-                      stroke={`hsl(${idx * 60}, 70%, 50%)`}
+                      stroke={`hsl(${idx * 30}, 70%, 50%)`}
                       name={pintura}
+                      connectNulls={false}
                     />
                   ))}
                 </LineChart>
