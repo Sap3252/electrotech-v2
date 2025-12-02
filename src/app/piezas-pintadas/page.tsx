@@ -87,11 +87,18 @@ function PiezasPintadasPage() {
           fetch("/api/piezas-pintadas"),
         ]);
 
-        setPiezas(await piezasRes.json());
-        setPinturas(await pinturasRes.json());
-        setLotes(await lotesRes.json());
+        const piezasData = piezasRes.ok ? await piezasRes.json() : [];
+        const pinturasData = pinturasRes.ok ? await pinturasRes.json() : [];
+        const lotesData = lotesRes.ok ? await lotesRes.json() : [];
+
+        setPiezas(Array.isArray(piezasData) ? piezasData : []);
+        setPinturas(Array.isArray(pinturasData) ? pinturasData : []);
+        setLotes(Array.isArray(lotesData) ? lotesData : []);
       } catch (err) {
         console.error("Error al cargar datos de Core 1:", err);
+        setPiezas([]);
+        setPinturas([]);
+        setLotes([]);
       }
     };
     cargar();
@@ -142,8 +149,10 @@ function PiezasPintadasPage() {
         fetch("/api/piezas-pintadas"),
         fetch("/api/piezas/disponibles"),
       ]);
-      setLotes(await lotesRes.json());
-      setPiezas(await piezasRes.json());
+      const lotesData = lotesRes.ok ? await lotesRes.json() : [];
+      const piezasData = piezasRes.ok ? await piezasRes.json() : [];
+      setLotes(Array.isArray(lotesData) ? lotesData : []);
+      setPiezas(Array.isArray(piezasData) ? piezasData : []);
 
       //Resetear formulario
       setCantidad(1);

@@ -148,21 +148,17 @@ export async function hasFormularioAccess(
   }
 
   try {
-    // Verificar si el usuario tiene acceso a componentes del formulario
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT COUNT(DISTINCT gc.id_componente) as count
-       FROM GrupoComponente gc
-       JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
-       JOIN Componente c ON c.id_componente = gc.id_componente
-       JOIN Formulario f ON f.id_formulario = c.id_formulario
-       JOIN Grupo g ON g.id_grupo = gc.id_grupo
-       WHERE gu.id_usuario = ? AND f.ruta = ?`,
-      [session.id_usuario, formularioRuta]
-    );
+    // Use getAccesibleFormularios to determine accessible routes (ensures same active-group logic)
+    const formularios = await getAccesibleFormularios(session);
+    // Primero comprobar coincidencia exacta
+    let tieneAcceso = formularios.some((f) => f.ruta === formularioRuta);
+    // Si no hay coincidencia exacta, permitir acceso al "padre" si existe alguna ruta hija accesible
+    if (!tieneAcceso) {
+      const prefix = formularioRuta.endsWith("/") ? formularioRuta : formularioRuta + "/";
+      tieneAcceso = formularios.some((f) => typeof f.ruta === "string" && f.ruta.startsWith(prefix));
+    }
+    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} (${session.grupos.join(',')}) - Ruta: ${formularioRuta} - Formularios accesibles: ${formularios.length} - Rutas: ${formularios.map(f=>f.ruta).join(', ')} - Acceso: ${tieneAcceso}`);
 
-    const tieneAcceso = rows[0].count > 0;
-    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} (${session.grupos.join(',')}) - Ruta: ${formularioRuta} - Componentes: ${rows[0].count} - Acceso: ${tieneAcceso}`);
-    
     return tieneAcceso;
   } catch (error) {
     console.error("Error verificando acceso a formulario:", error);

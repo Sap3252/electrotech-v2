@@ -32,8 +32,8 @@ export async function POST(request: Request) {
          JOIN GrupoComponente gc ON gc.id_grupo = g.id_grupo
          JOIN Componente c ON c.id_componente = gc.id_componente
          JOIN Formulario f ON f.id_formulario = c.id_formulario
-         WHERE gu.id_usuario = ? AND f.ruta = ? AND g.id_estado <> 1`,
-        [session.id_usuario, ruta]
+         WHERE gu.id_usuario = ? AND (f.ruta = ? OR f.ruta LIKE CONCAT(?, '/%')) AND g.id_estado <> 1`,
+        [session.id_usuario, ruta, ruta]
       );
 
       const gruposInactivasRuta = (rows as any[]).map((r) => ({
