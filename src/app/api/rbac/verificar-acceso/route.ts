@@ -36,7 +36,14 @@ export async function POST(request: Request) {
         [session.id_usuario, ruta, ruta]
       );
 
-      const gruposInactivasRuta = (rows as any[]).map((r) => ({
+      type GrupoInactivaRuta = {
+        id_grupo: number;
+        nombre: string;
+        id_estado: number;
+        estado: string;
+      };
+
+      const gruposInactivasRuta = (rows as GrupoInactivaRuta[]).map((r) => ({
         id_grupo: r.id_grupo,
         nombre: r.nombre,
         id_estado: r.id_estado,

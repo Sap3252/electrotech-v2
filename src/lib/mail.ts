@@ -1,20 +1,21 @@
 import nodemailer from "nodemailer";
 
 // Validar que las credenciales estén configuradas
-if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-  throw new Error("SMTP_USER y SMTP_PASS deben estar configurados en .env.local");
+// Usamos prefijo ELECTROTECH_ para evitar conflictos con variables de entorno del sistema
+if (!process.env.ELECTROTECH_SMTP_USER || !process.env.ELECTROTECH_SMTP_PASS) {
+  throw new Error("ELECTROTECH_SMTP_USER y ELECTROTECH_SMTP_PASS deben estar configurados en .env.local");
 }
 
-console.log("📧 Configurando email con:", process.env.SMTP_USER);
+console.log("📧 Configurando email con:", process.env.ELECTROTECH_SMTP_USER);
 
-// Configuración del transporter de nodemailer para Gmail
+// Configuración del transporter de nodemailer
 export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT) || 465,
+  host: process.env.ELECTROTECH_SMTP_HOST || "smtp.gmail.com",
+  port: Number(process.env.ELECTROTECH_SMTP_PORT) || 465,
   secure: true, // true para 465, false para otros puertos
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.ELECTROTECH_SMTP_USER,
+    pass: process.env.ELECTROTECH_SMTP_PASS,
   },
   tls: {
     rejectUnauthorized: false

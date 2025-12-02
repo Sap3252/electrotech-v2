@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { pool } from "./db";
 import { RowDataPacket } from "mysql2";
+import { RBACCompositeBuilder } from "@/domain/rbacComposite";
 
 const SECRET = process.env.JWT_SECRET!;
 
@@ -100,7 +101,7 @@ export function isAdmin(session: SessionData | null): boolean {
 }
 
 // ===========================
-//  VERIFICAR PERMISO A COMPONENTE (RBAC)
+//  VERIFICAR PERMISO A COMPONENTE (RBAC) - Usa Patrón Composite
 // ===========================
 
 export async function hasPermission(
@@ -113,18 +114,11 @@ export async function hasPermission(
   if (isAdmin(session)) return true;
 
   try {
-    // Verificar si alguno de los grupos del usuario tiene acceso al componente
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT COUNT(*) as count
-       FROM GrupoComponente gc
-       JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
-       JOIN Grupo g ON g.id_grupo = gc.id_grupo
-       -- Solo considerar grupos con estado ACTIVO (id_estado = 1)
-       WHERE gu.id_usuario = ? AND gc.id_componente = ? AND g.id_estado = 1`,
-      [session.id_usuario, componenteId]
-    );
-
-    return rows[0].count > 0;
+    // Obtener IDs de grupos activos del usuario
+    const gruposIds = await RBACCompositeBuilder.getGruposActivosUsuario(session.id_usuario);
+    
+    // Usar el patrón Composite para verificar acceso
+    return await RBACCompositeBuilder.verificarAccesoComponente(componenteId, gruposIds);
   } catch (error) {
     console.error("Error verificando permiso:", error);
     return false;
@@ -132,7 +126,7 @@ export async function hasPermission(
 }
 
 // ======================================
-//  VERIFICAR PERMISO A FORMULARIO (RBAC)
+//  VERIFICAR PERMISO A FORMULARIO (RBAC) - Usa Patrón Composite
 // ======================================
 
 export async function hasFormularioAccess(
@@ -148,16 +142,20 @@ export async function hasFormularioAccess(
   }
 
   try {
-    // Use getAccesibleFormularios to determine accessible routes (ensures same active-group logic)
-    const formularios = await getAccesibleFormularios(session);
-    // Primero comprobar coincidencia exacta
-    let tieneAcceso = formularios.some((f) => f.ruta === formularioRuta);
+    // Obtener IDs de grupos activos del usuario
+    const gruposIds = await RBACCompositeBuilder.getGruposActivosUsuario(session.id_usuario);
+    
+    // Usar el patrón Composite para verificar acceso a la ruta
+    let tieneAcceso = await RBACCompositeBuilder.verificarAccesoRuta(formularioRuta, gruposIds);
+    
     // Si no hay coincidencia exacta, permitir acceso al "padre" si existe alguna ruta hija accesible
     if (!tieneAcceso) {
       const prefix = formularioRuta.endsWith("/") ? formularioRuta : formularioRuta + "/";
+      const formularios = await RBACCompositeBuilder.getFormulariosAccesiblesFormatted(gruposIds);
       tieneAcceso = formularios.some((f) => typeof f.ruta === "string" && f.ruta.startsWith(prefix));
     }
-    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} (${session.grupos.join(',')}) - Ruta: ${formularioRuta} - Formularios accesibles: ${formularios.length} - Rutas: ${formularios.map(f=>f.ruta).join(', ')} - Acceso: ${tieneAcceso}`);
+    
+    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} (${session.grupos.join(',')}) - Ruta: ${formularioRuta} - Acceso: ${tieneAcceso}`);
 
     return tieneAcceso;
   } catch (error) {
@@ -167,7 +165,7 @@ export async function hasFormularioAccess(
 }
 
 // ==============================
-//OBTENER FORMULARIOS ACCESIBLES
+// OBTENER FORMULARIOS ACCESIBLES - Usa Patrón Composite
 // ==============================
 
 interface FormularioAccesible {
@@ -187,29 +185,11 @@ export async function getAccesibleFormularios(
   if (!session) return [];
 
   try {
-    const [formularios] = await pool.query<RowDataPacket[]>(
-      `SELECT DISTINCT 
-         m.id_modulo,
-         m.nombre as modulo,
-         m.icono as modulo_icono,
-         m.orden as modulo_orden,
-         f.id_formulario,
-         f.nombre as formulario,
-         f.ruta,
-         f.descripcion,
-         f.orden as formulario_orden
-       FROM GrupoComponente gc
-       JOIN GrupoUsuario gu ON gu.id_grupo = gc.id_grupo
-       JOIN Grupo g ON g.id_grupo = gc.id_grupo
-       JOIN Componente c ON c.id_componente = gc.id_componente
-       JOIN Formulario f ON f.id_formulario = c.id_formulario
-       JOIN Modulo m ON m.id_modulo = f.id_modulo
-       WHERE gu.id_usuario = ? AND f.activo = TRUE AND m.activo = TRUE AND g.id_estado = 1
-       ORDER BY m.orden, f.orden`,
-      [session.id_usuario]
-    );
-
-    return formularios as FormularioAccesible[];
+    // Obtener IDs de grupos activos del usuario
+    const gruposIds = await RBACCompositeBuilder.getGruposActivosUsuario(session.id_usuario);
+    
+    // Usar el patrón Composite para obtener formularios accesibles
+    return await RBACCompositeBuilder.getFormulariosAccesiblesFormatted(gruposIds);
   } catch (error) {
     console.error("Error obteniendo formularios accesibles:", error);
     return [];
