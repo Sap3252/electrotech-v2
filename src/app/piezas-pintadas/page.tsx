@@ -31,6 +31,20 @@ type Pintura = {
   tipo: string;
 };
 
+type Cabina = {
+  id_cabina: number;
+  nombre: string;
+  descripcion: string | null;
+  max_piezas_diarias: number;
+  estado: "activa" | "mantenimiento" | "inactiva";
+  piezas_hoy: number;
+  disponible: number;
+  porcentaje_uso: number;
+  pistolas: Array<{ id_pistola: number; nombre: string; estado: string }>;
+  hornos: Array<{ id_horno: number; nombre: string; estado: string }>;
+  tiene_equipos: boolean;
+};
+
 type PiezaPintadaRow = {
   id_pieza_pintada: number;
   fecha: string;
@@ -40,6 +54,7 @@ type PiezaPintadaRow = {
   marca: string;
   color: string;
   tipo: string;
+  cabina_nombre?: string;
 };
 
 export default function PiezasPintadasPageProtected() {
@@ -55,12 +70,14 @@ function PiezasPintadasPage() {
 
   const [piezas, setPiezas] = useState<Pieza[]>([]);
   const [pinturas, setPinturas] = useState<Pintura[]>([]);
+  const [cabinas, setCabinas] = useState<Cabina[]>([]);
   const [lotes, setLotes] = useState<PiezaPintadaRow[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
 
   const [idPieza, setIdPieza] = useState<number | "">("");
   const [idPintura, setIdPintura] = useState<number | "">("");
+  const [idCabina, setIdCabina] = useState<number | "">("");
   const [cantidad, setCantidad] = useState<number>(1);
   const [espesor, setEspesor] = useState<number>(50);
   const [densidad, setDensidad] = useState<number>(1.2);
@@ -68,10 +85,22 @@ function PiezasPintadasPage() {
   const [loading, setLoading] = useState(false);
 
   const [piezaSeleccionada, setPiezaSeleccionada] = useState<string>("");
+  const [cabinaSeleccionada, setCabinaSeleccionada] = useState<string>("");
   const [stockInfo, setStockInfo] = useState<{
     total_recibida: number;
     total_pintada: number;
     stock_disponible: number;
+  } | null>(null);
+  const [cabinaInfo, setCabinaInfo] = useState<{
+    nombre: string;
+    piezas_hoy: number;
+    piezas_restantes: number;
+    porcentaje_uso: number;
+    puede_usar: boolean;
+    mensaje: string;
+    nivel_alerta: "ok" | "warning" | "danger";
+    pistolas: string[];
+    hornos: string[];
   } | null>(null);
 
   const [mensajeError, setMensajeError] = useState<string>("");
@@ -81,32 +110,36 @@ function PiezasPintadasPage() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const [piezasRes, pinturasRes, lotesRes] = await Promise.all([
+        const [piezasRes, pinturasRes, lotesRes, cabinasRes] = await Promise.all([
           fetch("/api/piezas/disponibles"),
           fetch("/api/pinturas"),
           fetch("/api/piezas-pintadas"),
+          fetch("/api/cabinas/disponibles"),
         ]);
 
         const piezasData = piezasRes.ok ? await piezasRes.json() : [];
         const pinturasData = pinturasRes.ok ? await pinturasRes.json() : [];
         const lotesData = lotesRes.ok ? await lotesRes.json() : [];
+        const cabinasData = cabinasRes.ok ? await cabinasRes.json() : [];
 
         setPiezas(Array.isArray(piezasData) ? piezasData : []);
         setPinturas(Array.isArray(pinturasData) ? pinturasData : []);
         setLotes(Array.isArray(lotesData) ? lotesData : []);
+        setCabinas(Array.isArray(cabinasData) ? cabinasData : []);
       } catch (err) {
         console.error("Error al cargar datos de Core 1:", err);
         setPiezas([]);
         setPinturas([]);
         setLotes([]);
+        setCabinas([]);
       }
     };
     cargar();
   }, []);
 
   const registrarLote = async () => {
-    if (!idPieza || !idPintura || cantidad <= 0) {
-      alert("Seleccioná pieza, pintura y una cantidad válida.");
+    if (!idPieza || !idPintura || !idCabina || cantidad <= 0) {
+      alert("Seleccioná pieza, pintura, cabina y una cantidad válida.");
       return;
     }
 
@@ -117,6 +150,13 @@ function PiezasPintadasPage() {
       );
       return;
     }
+
+    //Validar capacidad de cabina
+    if (cabinaInfo && !cabinaInfo.puede_usar) {
+      setMensajeError(cabinaInfo.mensaje);
+      return;
+    }
+
     setMensajeError("");
 
     setLoading(true);
@@ -127,6 +167,7 @@ function PiezasPintadasPage() {
         body: JSON.stringify({
           id_pieza: idPieza,
           id_pintura: idPintura,
+          id_cabina: idCabina,
           cantidad,
           espesor_um: espesor,
           densidad_g_cm3: densidad,
@@ -142,23 +183,43 @@ function PiezasPintadasPage() {
       }
 
       const resultado = await res.json();
-      alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg`);
+      
+      // Mostrar alertas de cabina/pistolas/hornos si las hay
+      let mensajeAlertas = "";
+      if (resultado.alertas && resultado.alertas.length > 0) {
+        mensajeAlertas = "\n\n⚠️ Alertas:\n" + resultado.alertas.map((a: { mensaje: string; nombre_equipo: string }) => 
+          `• ${a.nombre_equipo}: ${a.mensaje}`
+        ).join("\n");
+      }
 
-      //Recargar tabla y piezas disponibles
-      const [lotesRes, piezasRes] = await Promise.all([
+      // Info de cabina
+      const infoCabina = resultado.cabina 
+        ? `\n\nCabina: ${resultado.cabina.nombre}\nPiezas hoy: ${resultado.cabina.piezas_hoy}/${resultado.cabina.piezas_restantes + resultado.cabina.piezas_hoy} (${resultado.cabina.porcentaje_uso}% usado)\nPistolas: ${resultado.cabina.pistolas?.join(", ") || "N/A"}\nHornos: ${resultado.cabina.hornos?.join(", ") || "N/A"}`
+        : "";
+
+      alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg${infoCabina}${mensajeAlertas}`);
+
+      //Recargar tabla, piezas disponibles y cabinas
+      const [lotesRes, piezasRes, cabinasRes] = await Promise.all([
         fetch("/api/piezas-pintadas"),
         fetch("/api/piezas/disponibles"),
+        fetch("/api/cabinas/disponibles"),
       ]);
       const lotesData = lotesRes.ok ? await lotesRes.json() : [];
       const piezasData = piezasRes.ok ? await piezasRes.json() : [];
+      const cabinasData = cabinasRes.ok ? await cabinasRes.json() : [];
       setLotes(Array.isArray(lotesData) ? lotesData : []);
       setPiezas(Array.isArray(piezasData) ? piezasData : []);
+      setCabinas(Array.isArray(cabinasData) ? cabinasData : []);
 
       //Resetear formulario
       setCantidad(1);
       setPiezaSeleccionada("");
+      setCabinaSeleccionada("");
       setIdPieza("");
+      setIdCabina("");
       setStockInfo(null);
+      setCabinaInfo(null);
     } catch (err) {
       console.error("Error al registrar lote:", err);
       alert("Error al registrar piezas pintadas.");
@@ -269,6 +330,104 @@ function PiezasPintadasPage() {
               </select>
             </div>
 
+            {/* CABINA */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Cabina de Pintura</label>
+              <Select
+                value={cabinaSeleccionada}
+                onValueChange={async (value) => {
+                  setCabinaSeleccionada(value);
+                  setIdCabina(Number(value));
+                  setMensajeError("");
+
+                  // Buscar la cabina en el array local
+                  const cabina = cabinas.find(c => c.id_cabina === Number(value));
+                  if (cabina) {
+                    const piezasRestantes = cabina.max_piezas_diarias - cabina.piezas_hoy;
+                    const puedeUsar = piezasRestantes >= cantidad;
+                    setCabinaInfo({
+                      nombre: cabina.nombre,
+                      piezas_hoy: cabina.piezas_hoy,
+                      piezas_restantes: piezasRestantes,
+                      porcentaje_uso: cabina.porcentaje_uso || 0,
+                      puede_usar: puedeUsar,
+                      mensaje: puedeUsar ? "" : `La cabina solo puede pintar ${piezasRestantes} piezas más hoy`,
+                      nivel_alerta: cabina.porcentaje_uso >= 90 ? "danger" : cabina.porcentaje_uso >= 75 ? "warning" : "ok",
+                      pistolas: cabina.pistolas?.map(p => p.nombre) || [],
+                      hornos: cabina.hornos?.map(h => h.nombre) || [],
+                    });
+                  } else {
+                    setCabinaInfo(null);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Seleccionar cabina --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cabinas.length === 0 ? (
+                    <SelectItem value="0" disabled>
+                      No hay cabinas disponibles
+                    </SelectItem>
+                  ) : (
+                    cabinas.map((c) => (
+                      <SelectItem key={c.id_cabina} value={String(c.id_cabina)}>
+                        {c.nombre} - {c.disponible} piezas disponibles ({c.porcentaje_uso}% usado)
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              
+              {cabinaInfo && (
+                <div className={`mt-4 p-4 rounded-lg border ${
+                  cabinaInfo.nivel_alerta === 'danger' 
+                    ? 'bg-red-50 border-red-200' 
+                    : cabinaInfo.nivel_alerta === 'warning'
+                    ? 'bg-yellow-50 border-yellow-200'
+                    : 'bg-emerald-50 border-emerald-200'
+                }`}>
+                  <p className="font-semibold mb-1">Estado de la cabina</p>
+                  <p>Piezas pintadas hoy: <strong>{cabinaInfo.piezas_hoy}</strong></p>
+                  <p>
+                    Piezas restantes:{" "}
+                    <strong className={
+                      cabinaInfo.piezas_restantes > 20 ? "text-emerald-700" : 
+                      cabinaInfo.piezas_restantes > 0 ? "text-yellow-600" : "text-red-600"
+                    }>
+                      {cabinaInfo.piezas_restantes}
+                    </strong>
+                  </p>
+                  {/* Equipos asignados */}
+                  <div className="mt-2 text-sm">
+                    <p>🔫 Pistolas: <strong>{cabinaInfo.pistolas.join(", ") || "Ninguna"}</strong></p>
+                    <p>🔥 Hornos: <strong>{cabinaInfo.hornos.join(", ") || "Ninguno"}</strong></p>
+                  </div>
+                  {/* Barra de progreso */}
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        cabinaInfo.porcentaje_uso >= 90
+                          ? "bg-red-500"
+                          : cabinaInfo.porcentaje_uso >= 75
+                          ? "bg-yellow-500"
+                          : "bg-emerald-500"
+                      }`}
+                      style={{ width: `${Math.min(cabinaInfo.porcentaje_uso, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {cabinaInfo.porcentaje_uso}% de capacidad utilizada
+                  </p>
+                  {!cabinaInfo.puede_usar && (
+                    <p className="mt-2 text-sm text-red-600 font-semibold">
+                      ⚠️ {cabinaInfo.mensaje}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* CANTIDAD */}
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -363,6 +522,7 @@ function PiezasPintadasPage() {
                           <th className="text-left py-1">Pieza</th>
                           <th className="text-left py-1">Cliente</th>
                       <th className="text-left py-1">Pintura</th>
+                      <th className="text-left py-1">Cabina</th>
                       <th className="text-right py-1">Cant.</th>
                       <th className="text-right py-1">Consumo (kg)</th>
                     </tr>
@@ -383,6 +543,7 @@ function PiezasPintadasPage() {
                               <td className="py-1">
                                 {l.marca} / {l.color} / {l.tipo}
                               </td>
+                              <td className="py-1">{l.cabina_nombre || "-"}</td>
                               <td className="py-1 text-right">{l.cantidad}</td>
                               <td className="py-1 text-right">
                                 {l.consumo_estimado_kg} kg

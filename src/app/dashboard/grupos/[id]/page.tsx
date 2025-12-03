@@ -149,6 +149,90 @@ export default function EditarPermisosGrupo({
     return acc;
   }, {} as Record<string, Record<string, Componente[]>>);
 
+  // Definir jerarquía visual de componentes para Maquinarias
+  // Estructura: nombre -> { nivel, orden dentro del nivel }
+  const JERARQUIA_MAQUINARIAS: { nombre: string; nivel: number }[] = [
+    // Cabinas
+    { nombre: "Tab Cabinas", nivel: 0 },
+    { nombre: "Formulario Nueva Cabina", nivel: 1 },
+    { nombre: "Ver Cards Cabinas", nivel: 1 },
+    { nombre: "Botón Editar Cabina", nivel: 2 },
+    { nombre: "Botón Eliminar Cabina", nivel: 2 },
+    // Pistolas
+    { nombre: "Tab Pistolas", nivel: 0 },
+    { nombre: "Formulario Nueva Pistola", nivel: 1 },
+    { nombre: "Ver Cards Pistolas", nivel: 1 },
+    { nombre: "Botón Editar Pistola", nivel: 2 },
+    { nombre: "Botón Eliminar Pistola", nivel: 2 },
+    { nombre: "Botón Registrar Mantenimiento Pistola", nivel: 2 },
+    // Hornos
+    { nombre: "Tab Hornos", nivel: 0 },
+    { nombre: "Formulario Nuevo Horno", nivel: 1 },
+    { nombre: "Ver Cards Hornos", nivel: 1 },
+    { nombre: "Botón Editar Horno", nivel: 2 },
+    { nombre: "Botón Eliminar Horno", nivel: 2 },
+    { nombre: "Botón Registrar Mantenimiento Horno", nivel: 2 },
+  ];
+
+  const JERARQUIA_REPORTES: { nombre: string; nivel: number }[] = [
+    { nombre: "Acceso Reportes Maquinarias", nivel: 0 },
+    { nombre: "Acceso Reporte", nivel: 0 },
+  ];
+
+  // Ordenar componentes según jerarquía definida
+  const ordenarPorJerarquia = (comps: Componente[], formulario: string) => {
+    const jerarquia = formulario.includes("Reporte") ? JERARQUIA_REPORTES : JERARQUIA_MAQUINARIAS;
+    
+    return [...comps].sort((a, b) => {
+      const idxA = jerarquia.findIndex(j => j.nombre === a.nombre);
+      const idxB = jerarquia.findIndex(j => j.nombre === b.nombre);
+      // Si no está en la jerarquía, va al final
+      if (idxA === -1 && idxB === -1) return a.nombre.localeCompare(b.nombre);
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  };
+
+  // Obtener nivel de un componente
+  const getNivel = (nombre: string, formulario: string) => {
+    const jerarquia = formulario.includes("Reporte") ? JERARQUIA_REPORTES : JERARQUIA_MAQUINARIAS;
+    const item = jerarquia.find(j => j.nombre === nombre);
+    return item?.nivel ?? 0;
+  };
+
+  // Generar prefijo visual de árbol
+  const getPrefijoArbol = (nombre: string, formulario: string, comps: Componente[], idx: number) => {
+    const jerarquia = formulario.includes("Reporte") ? JERARQUIA_REPORTES : JERARQUIA_MAQUINARIAS;
+    const item = jerarquia.find(j => j.nombre === nombre);
+    if (!item) return "";
+    
+    const nivel = item.nivel;
+    if (nivel === 0) return "";
+    
+    // Buscar si hay más elementos del mismo nivel después
+    const ordenados = ordenarPorJerarquia(comps, formulario);
+    const miIdx = ordenados.findIndex(c => c.nombre === nombre);
+    let esUltimo = true;
+    
+    for (let i = miIdx + 1; i < ordenados.length; i++) {
+      const nivelSig = getNivel(ordenados[i].nombre, formulario);
+      if (nivelSig === nivel) {
+        esUltimo = false;
+        break;
+      }
+      if (nivelSig < nivel) break;
+    }
+    
+    let prefijo = "";
+    for (let n = 1; n < nivel; n++) {
+      prefijo += "│   ";
+    }
+    prefijo += esUltimo ? "└── " : "├── ";
+    
+    return prefijo;
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 p-10">
       <div className="mb-6 flex justify-between items-center">
@@ -178,25 +262,30 @@ export default function EditarPermisosGrupo({
                   <div key={formulario} className="ml-4 mb-4">
                     <h4 className="font-semibold text-md mb-2">{formulario}</h4>
                     
-                    <div className="ml-4 space-y-2">
-                      {comps.map((comp) => (
-                        <div
-                          key={comp.id_componente}
-                          className="flex items-center space-x-2"
-                        >
-                          <Checkbox
-                            id={`comp-${comp.id_componente}`}
-                            checked={comp.asignado}
-                            onCheckedChange={() => toggleComponente(comp.id_componente)}
-                          />
-                          <Label
-                            htmlFor={`comp-${comp.id_componente}`}
-                            className="text-sm cursor-pointer"
+                    <div className="space-y-1">
+                      {ordenarPorJerarquia(comps, formulario).map((comp, idx) => {
+                        const prefijo = getPrefijoArbol(comp.nombre, formulario, comps, idx);
+                        
+                        return (
+                          <div
+                            key={comp.id_componente}
+                            className="flex items-center font-mono text-sm"
                           >
-                            {comp.nombre} ({comp.ruta})
-                          </Label>
-                        </div>
-                      ))}
+                            <span className="text-gray-400 select-none whitespace-pre">{prefijo}</span>
+                            <Checkbox
+                              id={`comp-${comp.id_componente}`}
+                              checked={comp.asignado}
+                              onCheckedChange={() => toggleComponente(comp.id_componente)}
+                            />
+                            <Label
+                              htmlFor={`comp-${comp.id_componente}`}
+                              className="cursor-pointer ml-2 font-sans"
+                            >
+                              {comp.nombre}
+                            </Label>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

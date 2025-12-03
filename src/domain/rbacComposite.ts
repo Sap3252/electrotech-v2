@@ -227,13 +227,15 @@ export class RBACCompositeBuilder {
        FROM Formulario ORDER BY orden`
     );
 
-    // 3. Obtener todos los componentes con sus grupos
+    // 3. Obtener todos los componentes con sus grupos ACTIVOS
+    // Solo incluir grupos que están activos (id_estado = 1)
     const [componentesRows] = await pool.query<RowDataPacket[]>(
       `SELECT c.id_componente, c.id_formulario, c.nombre, c.descripcion, c.tipo, c.activo,
-              GROUP_CONCAT(gc.id_grupo) as grupos
-       FROM Componente c
-       LEFT JOIN GrupoComponente gc ON gc.id_componente = c.id_componente
-       GROUP BY c.id_componente`
+              (SELECT GROUP_CONCAT(DISTINCT gc2.id_grupo)
+               FROM GrupoComponente gc2
+               JOIN Grupo g2 ON g2.id_grupo = gc2.id_grupo AND g2.id_estado = 1
+               WHERE gc2.id_componente = c.id_componente) as grupos
+       FROM Componente c`
     );
 
     // 4. Construir la estructura
@@ -303,12 +305,21 @@ export class RBACCompositeBuilder {
     
     for (const modulo of modulos) {
       for (const formulario of modulo.getChildren() as FormularioComposite[]) {
-        if (formulario.getRuta() === ruta && formulario.tieneAcceso(gruposUsuario)) {
-          return true;
+        if (formulario.getRuta() === ruta) {
+          const tieneAcceso = formulario.tieneAcceso(gruposUsuario);
+          console.log(`[RBAC] Ruta '${ruta}' encontrada en formulario '${formulario.getNombre()}'. Grupos usuario: [${gruposUsuario.join(',')}]. Acceso: ${tieneAcceso}`);
+          
+          // Debug: mostrar componentes y sus grupos
+          for (const comp of formulario.getChildren() as ComponenteLeaf[]) {
+            console.log(`  - Componente '${comp.getNombre()}': grupos con acceso [${comp.getGruposConAcceso().join(',')}], activo: ${comp.isActivo()}`);
+          }
+          
+          if (tieneAcceso) return true;
         }
       }
     }
     
+    console.log(`[RBAC] Ruta '${ruta}' NO encontrada o sin acceso para grupos [${gruposUsuario.join(',')}]`);
     return false;
   }
 

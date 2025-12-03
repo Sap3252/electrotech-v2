@@ -140,7 +140,7 @@ export default function Dashboard() {
                   className="bg-black text-white hover:bg-black/80"
                   onClick={() => router.push("/reportes")}
                 >
-                  Reportes (solo Admin & Gerente)
+                  Reportes
                 </Button>
               </div>
             </CardContent>
@@ -148,15 +148,29 @@ export default function Dashboard() {
         {/* #endregion */}
 
         {/* #region CORE 3 - Maquinaria */}
-        <Card
-            className="shadow cursor-pointer hover:shadow-lg transition"
-            onClick={() => router.push("/core3")}
-          >
+        <Card className="shadow transition p-4">
             <CardHeader>
               <CardTitle>Core 3 — Maquinaria</CardTitle>
             </CardHeader>
+
             <CardContent>
-              <p>Control de uso, alertas automáticas (Observer) e informes mensuales.</p>
+              <p className="mb-4">Control de uso, alertas automáticas (Observer) e informes mensuales.</p>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/dashboard/maquinarias")}
+                >
+                  Gestionar Maquinarias
+                </Button>
+
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/reportes/maquinarias")}
+                >
+                  Reportes de Maquinaria
+                </Button>
+              </div>
             </CardContent>
           </Card>
         {/* #endregion */}

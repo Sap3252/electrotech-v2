@@ -1,53 +1,85 @@
-# Sistema RBAC - Electrotech
+# Base de Datos Electrotech2
 
-## 📁 Archivo Principal
+## ⚠️ IMPORTANTE: La base de datos se llama `electrotech2`
 
-**`rbac-completo.sql`** - Script unificado que contiene:
-- ✅ Estructura completa de tablas (Modulo, Formulario, Componente, GrupoComponente)
-- ✅ 4 Módulos del sistema
-- ✅ 15 Formularios
-- ✅ 24 Componentes (IDs 1-23, 27)
-- ✅ Permisos completos para grupo Admin
-- ✅ Vistas útiles (v_estructura_permisos, v_permisos_grupo)
-- ✅ Queries de verificación
+## 📁 Archivos SQL
 
-## 🚀 Cómo usar
+| Archivo | Descripción | Orden de ejecución |
+|---------|-------------|-------------------|
+| `electrotech-schema.sql` | Estructura completa de tablas | 1° |
+| `rbac-completo.sql` | Sistema RBAC (módulos, formularios, componentes) | 2° |
+| `rbac-maquinarias.sql` | RBAC para Core 3 - Maquinarias | 3° |
+| `maquinaria-update.sql` | Actualización para soporte de maquinarias | 4° |
+| `reset-data.sql` | Resetear y repoblar datos de prueba | Opcional |
 
-### Instalación inicial
+## 🚀 Instalación Completa
+
+### Opción 1: Desde la terminal
 ```bash
-mysql -u usuario -p base_de_datos < database/rbac-completo.sql
+# 1. Crear la base de datos y estructura
+mysql -u root -p < database/electrotech-schema.sql
+
+# 2. Instalar sistema RBAC
+mysql -u root -p electrotech2 < database/rbac-completo.sql
+
+# 3. Agregar RBAC para maquinarias
+mysql -u root -p electrotech2 < database/rbac-maquinarias.sql
+
+# 4. Actualizar para soporte de maquinarias
+mysql -u root -p electrotech2 < database/maquinaria-update.sql
+
+# 5. (Opcional) Cargar datos de prueba
+mysql -u root -p electrotech2 < database/reset-data.sql
 ```
 
-O desde DBeaver:
-1. Abrir `rbac-completo.sql`
-2. Ejecutar script completo (Ctrl+Enter)
-3. Verificar resultados en la query de verificación al final
+### Opción 2: Desde DBeaver o MySQL Workbench
+1. Ejecutar cada archivo en el orden indicado
+2. Asegurarse de estar conectado a `electrotech2`
 
-## 📊 Estructura
+## 📊 Estructura RBAC
 
-### Módulos (4)
+### Módulos (5)
 1. **Piezas y Pinturas** - Gestión de producción
 2. **Facturación** - Facturas, remitos, clientes
 3. **Reportes** - Estadísticas y análisis
 4. **Administración** - Usuarios y grupos
+5. **Maquinarias** - Gestión de maquinarias (Core 3)
 
-### Componentes por Tipo
-- **formulario** (7): Formularios de creación/edición
-- **tabla** (5): Tablas de listado
-- **boton** (6): Botones de acción (editar, eliminar, ver detalle, imprimir)
-- **acceso** (6): Permisos de acceso a reportes
+### Formularios de Maquinarias
+| ID | Ruta | Descripción |
+|----|------|-------------|
+| 16 | `/dashboard/maquinarias` | Gestión de maquinarias |
+| 17 | `/reportes/maquinarias` | Reportes de maquinarias |
 
-### Componentes Clave
-- **1-4**: Piezas (formulario, tabla, editar, eliminar)
-- **5-7**: Pinturas (formulario, tabla, eliminar)
-- **8-9, 23**: Piezas Pintadas (formulario, tabla, eliminar)
-- **10-13**: Remitos (formulario, tabla, ver, imprimir)
-- **14-17**: Facturación (formulario, tabla, ver, imprimir)
-- **18-22, 27**: Reportes (6 reportes con acceso)
+### Componentes de Maquinarias (IDs 30-42)
+| ID | Componente | Tipo |
+|----|------------|------|
+| 30 | Formulario Nueva Maquinaria | formulario |
+| 31 | Tabla Listado Maquinarias | tabla |
+| 32 | Botón Ver Detalle | boton |
+| 33 | Botón Editar | boton |
+| 34 | Botón Eliminar | boton |
+| 35 | Botón Registrar Mantenimiento | boton |
+| 36 | Ver Alertas | seccion |
+| 37 | Acceso Reportes Maquinarias | acceso |
+| 38-41 | Secciones de reportes | seccion |
+| 42 | Selector Maquinaria (en piezas pintadas) | formulario |
 
-## 🔧 Gestión de Permisos
+## 🔧 Variables de Entorno
 
-### Desde la UI
+Asegúrate de tener en `.env.local`:
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=tu_password
+DB_NAME=electrotech2
+```
+
+## 📝 Notas
+
+- El grupo **Admin** (id_grupo=1) tiene todos los permisos automáticamente
+- Los nuevos componentes usan IDs desde el 30 para evitar conflictos
+- Las rutas protegidas se validan con `ProtectedPage` y `ProtectedComponent`
 1. Ir a `/dashboard/admin`
 2. Click en "Gestión de Grupos"
 3. Seleccionar un grupo

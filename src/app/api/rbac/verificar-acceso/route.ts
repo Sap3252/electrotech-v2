@@ -6,6 +6,7 @@ export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session) {
+      console.log("[verificar-acceso] Sin sesión - redirigiendo a login");
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
@@ -18,7 +19,11 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log(`[verificar-acceso] Usuario ${session.id_usuario} (grupos: ${session.grupos.join(',')}) verificando acceso a: ${ruta}`);
+
     const tieneAcceso = await hasFormularioAccess(session, ruta);
+    
+    console.log(`[verificar-acceso] Resultado para ${ruta}: ${tieneAcceso ? 'PERMITIDO' : 'DENEGADO'}`);
 
     // Consultar únicamente los grupos INACTIVOS/SUSPENDIDOS del usuario
     // que además tienen permisos sobre el formulario/route solicitado.

@@ -10,6 +10,8 @@
 -- 5. Vistas útiles
 -- ==========================================
 
+USE electrotech2;
+
 -- Deshabilitar verificación de llaves foráneas temporalmente
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -179,6 +181,21 @@ INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
 (27, 13, 'Acceso Ventas Cliente Específico', 'acceso'),
 (29, 15, 'Página Principal Reportes', 'otro')
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), id_formulario=VALUES(id_formulario), tipo=VALUES(tipo);
+
+-- ==========================================
+-- ESTADOS DE GRUPO Y GRUPOS BASE
+-- ==========================================
+
+-- Insertar estados de grupo (necesarios para la FK de Grupo)
+INSERT INTO EstadoGrupo (id_estado, nombre) VALUES
+(1, 'Activo'),
+(2, 'Inactivo')
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
+
+-- Insertar grupo Admin
+INSERT INTO Grupo (id_grupo, nombre, id_estado) VALUES
+(1, 'Admin', 1)
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
 -- ==========================================
 -- PERMISOS ADMIN

@@ -6,13 +6,20 @@
 -- Fecha: 2025-12-01
 -- ==========================================
 
-USE electrotech;
+USE electrotech2;
 
 -- ==========================================
 -- DESACTIVAR VALIDACIONES TEMPORALMENTE
 -- ==========================================
 SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_SAFE_UPDATES = 0;
+
+-- ==========================================
+-- ELIMINAR TRIGGERS ANTIGUOS
+-- ==========================================
+DROP TRIGGER IF EXISTS after_piezapintada_insert;
+DROP TRIGGER IF EXISTS trg_piezapintada_insert;
+DROP TRIGGER IF EXISTS tr_after_piezapintada_insert;
 
 -- ==========================================
 -- FASE 1: ELIMINACIÓN DE DATOS
@@ -27,10 +34,14 @@ DELETE FROM factura;
 DELETE FROM remitodetalle;
 DELETE FROM remito;
 
--- 3. Eliminar historial de maquinaria
+-- 3. Eliminar historial y equipos de cabinas
 DELETE FROM alertasmaquinaria;
-DELETE FROM maquinariahistorial;
-DELETE FROM maquinaria;
+DELETE FROM cabinahistorial;
+DELETE FROM cabinapistola;
+DELETE FROM cabinahorno;
+DELETE FROM cabina;
+DELETE FROM pistola;
+DELETE FROM horno;
 
 -- 4. Eliminar empleados y relacionados
 DELETE FROM salario;
@@ -63,6 +74,7 @@ DELETE FROM cliente;
 -- REINICIAR AUTO_INCREMENT
 -- ==========================================
 ALTER TABLE cliente AUTO_INCREMENT = 1;
+ALTER TABLE proveedor AUTO_INCREMENT = 1;
 ALTER TABLE pieza AUTO_INCREMENT = 1;
 ALTER TABLE stockpieza AUTO_INCREMENT = 1;
 ALTER TABLE marca AUTO_INCREMENT = 1;
@@ -76,18 +88,15 @@ ALTER TABLE factura AUTO_INCREMENT = 1;
 ALTER TABLE facturadetalle AUTO_INCREMENT = 1;
 ALTER TABLE empleado AUTO_INCREMENT = 1;
 ALTER TABLE salario AUTO_INCREMENT = 1;
-ALTER TABLE maquinaria AUTO_INCREMENT = 1;
-ALTER TABLE maquinariahistorial AUTO_INCREMENT = 1;
+ALTER TABLE cabina AUTO_INCREMENT = 1;
+ALTER TABLE pistola AUTO_INCREMENT = 1;
+ALTER TABLE horno AUTO_INCREMENT = 1;
+ALTER TABLE cabinahistorial AUTO_INCREMENT = 1;
 ALTER TABLE alertasmaquinaria AUTO_INCREMENT = 1;
 
 -- ==========================================
--- REACTIVAR VALIDACIONES
--- ==========================================
-SET FOREIGN_KEY_CHECKS = 1;
-SET SQL_SAFE_UPDATES = 1;
-
--- ==========================================
 -- FASE 2: INSERCIÓN DE NUEVOS DATOS
+-- (FOREIGN_KEY_CHECKS permanece desactivado hasta el final)
 -- ==========================================
 
 -- ==========================================
@@ -705,22 +714,58 @@ INSERT INTO asistencia (id_empleado, fecha, presente, es_justificada, justificac
 (2, '2025-11-07', 1, 0, NULL);
 
 -- ==========================================
--- 13. MAQUINARIAS
+-- 13. CABINAS, PISTOLAS Y HORNOS
 -- ==========================================
-INSERT INTO maquinaria (descripcion, horas_uso, max_piezas_diarias) VALUES
-('Cabina de pintura automática A1', 450.50, 200),
-('Cabina de pintura manual B2', 380.25, 120),
-('Horno de secado rápido C3', 520.75, 250);
+
+-- Pistolas (máquinas de pintura)
+INSERT INTO pistola (nombre, descripcion, horas_uso, horas_mantenimiento, ultimo_mantenimiento, estado) VALUES
+('Pistola Automática A1', 'Pistola automática de alta precisión', 250.50, 500, '2025-10-01', 'activa'),
+('Pistola Automática A2', 'Pistola automática secundaria', 180.25, 500, '2025-10-15', 'activa'),
+('Pistola Manual B1', 'Pistola manual para detalles finos', 420.00, 500, '2025-08-20', 'activa'),
+('Pistola Manual B2', 'Pistola manual de respaldo', 85.00, 500, '2025-11-01', 'activa'),
+('Pistola Precision C1', 'Pistola de precisión para piezas pequeñas', 350.75, 500, '2025-09-10', 'activa'),
+('Pistola Industrial D1', 'Pistola industrial de alto volumen', 480.00, 500, '2025-07-15', 'mantenimiento');
+
+-- Hornos (secado y curado)
+INSERT INTO horno (nombre, descripcion, horas_uso, horas_mantenimiento, temperatura_max, gasto_gas_hora, ultimo_mantenimiento, estado) VALUES
+('Horno Principal 1', 'Horno principal de secado rápido', 720.50, 1000, 220.00, 2.5, '2025-09-15', 'activo'),
+('Horno Principal 2', 'Horno principal de respaldo', 580.25, 1000, 220.00, 2.5, '2025-10-01', 'activo'),
+('Horno Curado Grande', 'Horno de curado para piezas grandes', 850.00, 1000, 250.00, 3.0, '2025-08-01', 'activo'),
+('Horno Pequeño A', 'Horno pequeño para componentes', 320.00, 1000, 180.00, 1.5, '2025-11-01', 'activo');
+
+-- Cabinas de pintura
+INSERT INTO cabina (nombre, descripcion, max_piezas_diarias, piezas_hoy, estado) VALUES
+('Cabina Principal A', 'Cabina de pintura automática principal', 200, 0, 'activa'),
+('Cabina Secundaria B', 'Cabina de pintura secundaria', 150, 0, 'activa'),
+('Cabina Especial C', 'Cabina para piezas especiales y grandes', 100, 0, 'activa'),
+('Cabina Manual D', 'Cabina de pintura manual para detalles', 80, 0, 'activa');
+
+-- Asignación Cabina-Pistola (muchos a muchos)
+INSERT INTO cabinapistola (id_cabina, id_pistola, fecha_asignacion, activa) VALUES
+(1, 1, '2025-01-01', TRUE),  -- Cabina A: Pistola A1
+(1, 2, '2025-01-01', TRUE),  -- Cabina A: Pistola A2 (dos pistolas)
+(2, 3, '2025-01-01', TRUE),  -- Cabina B: Pistola B1
+(2, 4, '2025-03-01', TRUE),  -- Cabina B: Pistola B2 (dos pistolas)
+(3, 5, '2025-01-01', TRUE),  -- Cabina C: Pistola C1
+(4, 3, '2025-06-01', FALSE); -- Cabina D: Pistola B1 (inactiva - movida a cabina B)
+
+-- Asignación Cabina-Horno (muchos a muchos)
+INSERT INTO cabinahorno (id_cabina, id_horno, fecha_asignacion, activo) VALUES
+(1, 1, '2025-01-01', TRUE),  -- Cabina A: Horno Principal 1
+(1, 2, '2025-01-01', TRUE),  -- Cabina A: Horno Principal 2 (dos hornos)
+(2, 2, '2025-01-01', TRUE),  -- Cabina B: Horno Principal 2 (compartido)
+(3, 3, '2025-01-01', TRUE),  -- Cabina C: Horno Grande
+(4, 4, '2025-01-01', TRUE);  -- Cabina D: Horno Pequeño
 
 -- ==========================================
--- 14. HISTORIAL DE MAQUINARIA
+-- 14. HISTORIAL DE CABINAS
 -- ==========================================
-INSERT INTO maquinariahistorial (id_maquinaria, fecha, piezas_pintadas, id_pieza, id_pintura) VALUES
-(1, '2025-11-05', 50, 1, 1),
-(1, '2025-11-06', 80, 2, 3),
-(2, '2025-11-08', 70, 5, 4),
-(3, '2025-11-10', 50, 8, 6),
-(1, '2025-11-13', 120, 11, 1);
+INSERT INTO cabinahistorial (id_cabina, fecha, piezas_pintadas, id_pieza, id_pintura, horas_trabajo, gas_consumido) VALUES
+(1, '2025-11-05', 50, 1, 1, 5.0, 12.5),
+(1, '2025-11-06', 80, 2, 3, 8.0, 20.0),
+(2, '2025-11-08', 70, 5, 4, 7.0, 17.5),
+(3, '2025-11-10', 50, 8, 6, 5.0, 15.0),
+(1, '2025-11-13', 120, 11, 1, 12.0, 30.0);
 
 -- ==========================================
 -- VERIFICACIÓN FINAL
@@ -743,7 +788,9 @@ SELECT CONCAT('Piezas Pintadas: ', COUNT(*)) AS resumen FROM piezapintada;
 SELECT CONCAT('Facturas: ', COUNT(*)) AS resumen FROM factura;
 SELECT CONCAT('Detalles de Factura: ', COUNT(*)) AS resumen FROM facturadetalle;
 SELECT CONCAT('Empleados: ', COUNT(*)) AS resumen FROM empleado;
-SELECT CONCAT('Maquinarias: ', COUNT(*)) AS resumen FROM maquinaria;
+SELECT CONCAT('Cabinas: ', COUNT(*)) AS resumen FROM cabina;
+SELECT CONCAT('Pistolas: ', COUNT(*)) AS resumen FROM pistola;
+SELECT CONCAT('Hornos: ', COUNT(*)) AS resumen FROM horno;
 
 SELECT '' AS '';
 SELECT 'ESTADO DE STOCK DE PIEZAS' AS '';
@@ -774,6 +821,12 @@ JOIN marca m ON m.id_marca = pi.id_marca
 JOIN color co ON co.id_color = pi.id_color
 JOIN tipopintura t ON t.id_tipo = pi.id_tipo
 ORDER BY id_pintura;
+
+-- ==========================================
+-- REACTIVAR VALIDACIONES
+-- ==========================================
+SET FOREIGN_KEY_CHECKS = 1;
+SET SQL_SAFE_UPDATES = 1;
 
 -- ==========================================
 -- FIN DEL SCRIPT

@@ -63,11 +63,12 @@ export async function getSession(): Promise<SessionData | null> {
     // el token debe tener al menos { id_usuario: number }
     // cuando lo crees en el login usá: createToken({ id_usuario: usuario.id_usuario, ... })
 
+    // Solo obtener grupos ACTIVOS (id_estado = 1)
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT g.nombre 
        FROM GrupoUsuario gu
        JOIN Grupo g ON g.id_grupo = gu.id_grupo
-       WHERE gu.id_usuario = ?`,
+       WHERE gu.id_usuario = ? AND g.id_estado = 1`,
       [decoded.id_usuario]
     );
 
@@ -133,17 +134,27 @@ export async function hasFormularioAccess(
   session: SessionData | null,
   formularioRuta: string
 ): Promise<boolean> {
-  if (!session) return false;
+  if (!session) {
+    console.log(`[hasFormularioAccess] Sin sesión - Acceso denegado a ${formularioRuta}`);
+    return false;
+  }
   
-  // Admin siempre tiene acceso
+  // Admin siempre tiene acceso (solo si está en grupo activo)
   if (isAdmin(session)) {
-    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} es Admin - Acceso permitido a ${formularioRuta}`);
+    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} es Admin (grupo activo) - Acceso permitido a ${formularioRuta}`);
     return true;
   }
 
   try {
     // Obtener IDs de grupos activos del usuario
     const gruposIds = await RBACCompositeBuilder.getGruposActivosUsuario(session.id_usuario);
+    
+    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} - Grupos activos: [${gruposIds.join(',')}] - Verificando ruta: ${formularioRuta}`);
+    
+    if (gruposIds.length === 0) {
+      console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} no tiene grupos activos - Acceso denegado`);
+      return false;
+    }
     
     // Usar el patrón Composite para verificar acceso a la ruta
     let tieneAcceso = await RBACCompositeBuilder.verificarAccesoRuta(formularioRuta, gruposIds);

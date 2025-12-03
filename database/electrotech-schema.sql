@@ -6,8 +6,8 @@
 -- ==========================================
 
 -- Create database
-CREATE DATABASE IF NOT EXISTS electrotech;
-USE electrotech;
+CREATE DATABASE IF NOT EXISTS electrotech2;
+USE electrotech2;
 
 -- ==========================================
 -- SISTEMA RBAC - TABLAS BASE
