@@ -5,10 +5,20 @@ import { RowDataPacket } from "mysql2";
 // GET: Obtener cabinas disponibles (activas) para pintar
 export async function GET() {
   try {
-    // Reset automático: Si el último uso fue de otro día, resetear piezas_hoy
+    // Reset automático: Si la última fecha registrada en cabinahistorial fue de otro día, resetear piezas_hoy
+    // Nota: la columna 'ultimo_uso' no existe en algunas instalaciones, por eso calculamos a partir de cabinahistorial
     const hoy = new Date().toISOString().split('T')[0];
     await pool.query(
-      `UPDATE cabina SET piezas_hoy = 0 WHERE ultimo_uso IS NOT NULL AND DATE(ultimo_uso) < ?`,
+      `
+      UPDATE cabina c
+      JOIN (
+        SELECT id_cabina, MAX(fecha) AS last_fecha
+        FROM cabinahistorial
+        GROUP BY id_cabina
+      ) ch ON ch.id_cabina = c.id_cabina
+      SET c.piezas_hoy = 0
+      WHERE ch.last_fecha IS NOT NULL AND DATE(ch.last_fecha) < ?
+      `,
       [hoy]
     );
 
@@ -20,7 +30,7 @@ export async function GET() {
         c.max_piezas_diarias,
         c.piezas_hoy,
         c.estado,
-        c.ultimo_uso,
+        /* c.ultimo_uso removed - not present in schema */
         ROUND((c.piezas_hoy / c.max_piezas_diarias) * 100, 1) AS porcentaje_uso,
         (c.max_piezas_diarias - c.piezas_hoy) AS disponible
       FROM cabina c

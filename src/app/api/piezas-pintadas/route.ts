@@ -83,7 +83,7 @@ export async function POST(req: Request) {
 
     // 0.1) Obtener información completa de la cabina
     const [cabinaRows] = await pool.query<RowDataPacket[]>(
-      `SELECT id_cabina, nombre, descripcion, max_piezas_diarias, piezas_hoy, estado, ultimo_uso
+      `SELECT id_cabina, nombre, descripcion, max_piezas_diarias, piezas_hoy, estado
        FROM cabina
        WHERE id_cabina = ?`,
       [id_cabina]
@@ -95,24 +95,17 @@ export async function POST(req: Request) {
 
     let cabinaData = cabinaRows[0];
 
-    // 0.2) Reset automático: Si el último uso fue de otro día, resetear piezas_hoy
+    // 0.2) Reset automático: Si la última fecha registrada en cabinahistorial fue de otro día, resetear piezas_hoy
     const hoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const ultimoUso = cabinaData.ultimo_uso ? new Date(cabinaData.ultimo_uso).toISOString().split('T')[0] : null;
-    
-    if (ultimoUso && ultimoUso !== hoy) {
-      // El último uso fue otro día, resetear contador
-      await pool.query(
-        `UPDATE cabina SET piezas_hoy = 0, ultimo_uso = CURDATE() WHERE id_cabina = ?`,
-        [id_cabina]
-      );
+    const [lastRows] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE(MAX(fecha)) AS last_fecha FROM cabinahistorial WHERE id_cabina = ?`,
+      [id_cabina]
+    );
+    const lastFecha = lastRows[0]?.last_fecha ? String(lastRows[0].last_fecha) : null;
+    if (lastFecha && lastFecha !== hoy) {
+      await pool.query(`UPDATE cabina SET piezas_hoy = 0 WHERE id_cabina = ?`, [id_cabina]);
       cabinaData.piezas_hoy = 0;
-      console.log(`[Reset Automático] Cabina "${cabinaData.nombre}" reseteada. Último uso: ${ultimoUso}, Hoy: ${hoy}`);
-    } else if (!ultimoUso) {
-      // Primera vez que se usa, establecer fecha
-      await pool.query(
-        `UPDATE cabina SET ultimo_uso = CURDATE() WHERE id_cabina = ?`,
-        [id_cabina]
-      );
+      console.log(`[Reset Automático] Cabina "${cabinaData.nombre}" reseteada. Último uso: ${lastFecha}, Hoy: ${hoy}`);
     }
     
     if (cabinaData.estado !== 'activa') {
@@ -349,9 +342,9 @@ export async function POST(req: Request) {
         [id_cabina, cantidad, id_pieza, id_pintura, horas_trabajo, gasConsumido]
       );
 
-      // Actualizar contador de piezas_hoy y ultimo_uso en cabina
+      // Actualizar contador de piezas_hoy en cabina (no usamos columna ultimo_uso en el esquema)
       await conn.query(
-        `UPDATE cabina SET piezas_hoy = piezas_hoy + ?, ultimo_uso = CURDATE() WHERE id_cabina = ?`,
+        `UPDATE cabina SET piezas_hoy = piezas_hoy + ? WHERE id_cabina = ?`,
         [cantidad, id_cabina]
       );
 
