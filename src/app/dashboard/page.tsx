@@ -176,15 +176,29 @@ export default function Dashboard() {
         {/* #endregion */}
 
         {/* #region CORE 4 - Empleados */}
-        <Card
-            className="shadow cursor-pointer hover:shadow-lg transition"
-            onClick={() => router.push("/core4")}
-          >
+        <Card className="shadow transition p-4">
             <CardHeader>
               <CardTitle>Core 4 — Empleados</CardTitle>
             </CardHeader>
+
             <CardContent>
-              <p>Gestión de asistencia, salarios, descuentos y presentismo.</p>
+              <p className="mb-4">Gestión de asistencia, salarios, descuentos y presentismo.</p>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/dashboard/empleados")}
+                >
+                  Gestionar Empleados
+                </Button>
+
+                <Button
+                  className="bg-black text-white hover:bg-black/80"
+                  onClick={() => router.push("/dashboard/recibos")}
+                >
+                  Recibos de Sueldo
+                </Button>
+              </div>
             </CardContent>
           </Card>
         {/* #endregion */}

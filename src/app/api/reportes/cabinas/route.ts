@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { getSession, hasPermission } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { RowDataPacket } from "mysql2";
 
 // GET: Obtener reportes de cabinas

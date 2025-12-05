@@ -84,7 +84,36 @@ export default function EditarPermisosGrupo({
       const formulario = objetivo.formulario;
       const currentAsignado = !!objetivo.asignado;
       const nuevoAsignado = !currentAsignado;
-      // Si estamos DESACTIVANDO el componente, también desactivamos en cascada
+
+      // CASO ESPECIAL: Si es "Acceso Reportes Maquinarias" (el padre de todos los reportes de maquinarias)
+      if (objetivo.nombre === "Acceso Reportes Maquinarias") {
+        if (!nuevoAsignado) {
+          // Desactivar TODOS los reportes de maquinarias (hijos)
+          return prev.map((c) => {
+            if (c.id_componente === idComponente) return { ...c, asignado: false };
+            // Desactivar todos los componentes que son reportes de maquinarias
+            if (c.ruta?.startsWith("/reportes/maquinarias/")) return { ...c, asignado: false };
+            return c;
+          });
+        }
+        // Si estamos activando, solo activar el padre
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
+      }
+
+      // CASO ESPECIAL: Si es un reporte hijo de maquinarias, verificar que el padre esté activo
+      if (objetivo.ruta?.startsWith("/reportes/maquinarias/") && nuevoAsignado) {
+        const padre = prev.find((c) => c.nombre === "Acceso Reportes Maquinarias");
+        if (padre && !padre.asignado) {
+          alert("Debes activar primero: Acceso Reportes Maquinarias");
+          return prev;
+        }
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
+      }
+
+      // Si es un reporte hijo y estamos desactivando, solo desactivar ese
+      if (objetivo.ruta?.startsWith("/reportes/maquinarias/") && !nuevoAsignado) {
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: false } : c));
+      }
 
       const nivelObjetivo = getNivel(objetivo.nombre, formulario);
 
@@ -259,14 +288,14 @@ export default function EditarPermisosGrupo({
   ];
 
   const JERARQUIA_REPORTES: { nombre: string; nivel: number }[] = [
-    // Submenu principal para Maquinarias
-    { nombre: "Submenu Maquinarias", nivel: 0 },
-    // Reportes (se muestran con sangría bajo el submenu)
-    { nombre: "Acceso - Uso Cabinas", nivel: 1 },
-    { nombre: "Acceso - Productividad Diaria", nivel: 1 },
-    { nombre: "Acceso - Mantenimiento Pistolas", nivel: 1 },
-    { nombre: "Acceso - Mantenimiento Hornos", nivel: 1 },
-    { nombre: "Acceso - Consumo Gas", nivel: 1 },
+    // Componente padre para Reportes de Maquinarias
+    { nombre: "Acceso Reportes Maquinarias", nivel: 0 },
+    // Reportes individuales (hijos)
+    { nombre: "Acceso Reporte Uso de Cabinas", nivel: 1 },
+    { nombre: "Acceso Reporte Productividad Diaria", nivel: 1 },
+    { nombre: "Acceso Reporte Mantenimiento Pistolas", nivel: 1 },
+    { nombre: "Acceso Reporte Mantenimiento Hornos", nivel: 1 },
+    { nombre: "Acceso Reporte Consumo de Gas", nivel: 1 },
   ];
 
   // Ordenar componentes según jerarquía definida
@@ -403,39 +432,40 @@ export default function EditarPermisosGrupo({
               <div className="border rounded-lg p-4">
                 <h3 className="font-bold text-lg mb-4">Reportes Maquinarias</h3>
 
-                <div className="flex gap-6">
-                  <div className="w-64">
-                    {reportesMaquinariaComps.filter(c => getNivel(c.nombre, c.formulario) === 0).map((comp) => (
-                      <div key={comp.id_componente} className="flex items-center font-mono text-sm mb-1">
+                <div className="space-y-1">
+                  {/* Componente padre: Acceso Reportes Maquinarias */}
+                  {reportesMaquinariaComps
+                    .filter(c => c.nombre === "Acceso Reportes Maquinarias")
+                    .map((comp) => (
+                      <div key={comp.id_componente} className="flex items-center font-mono text-sm mb-2">
                         <Checkbox
                           id={`comp-${comp.id_componente}`}
                           checked={comp.asignado}
                           onCheckedChange={() => toggleComponente(comp.id_componente)}
                         />
-                        <Label htmlFor={`comp-${comp.id_componente}`} className="cursor-pointer ml-2 font-sans">
+                        <Label htmlFor={`comp-${comp.id_componente}`} className="cursor-pointer ml-2 font-sans font-semibold">
                           {comp.nombre}
                         </Label>
                       </div>
                     ))}
-                  </div>
 
-                  <div className="flex-1">
-                    <div className="space-y-1">
-                      {reportesMaquinariaComps.filter(c => getNivel(c.nombre, c.formulario) > 0).map((comp, idx) => (
-                        <div key={comp.id_componente} className="flex items-center font-mono text-sm">
-                          <span className="text-gray-400 select-none whitespace-pre mr-2">{getPrefijoArbol(comp.nombre, comp.formulario, reportesMaquinariaComps, idx)}</span>
-                          <Checkbox
-                            id={`comp-${comp.id_componente}`}
-                            checked={comp.asignado}
-                            onCheckedChange={() => toggleComponente(comp.id_componente)}
-                          />
-                          <Label htmlFor={`comp-${comp.id_componente}`} className="cursor-pointer ml-2 font-sans">
-                            {comp.nombre}
-                          </Label>
-                        </div>
-                      ))}
+                  {/* Componentes hijos: Reportes individuales */}
+                  {ordenarPorJerarquia(
+                    reportesMaquinariaComps.filter(c => c.nombre !== "Acceso Reportes Maquinarias"),
+                    "Reportes"
+                  ).map((comp) => (
+                    <div key={comp.id_componente} className="flex items-center font-mono text-sm ml-6">
+                      <span className="text-gray-400 select-none whitespace-pre mr-2">├── </span>
+                      <Checkbox
+                        id={`comp-${comp.id_componente}`}
+                        checked={comp.asignado}
+                        onCheckedChange={() => toggleComponente(comp.id_componente)}
+                      />
+                      <Label htmlFor={`comp-${comp.id_componente}`} className="cursor-pointer ml-2 font-sans">
+                        {comp.nombre}
+                      </Label>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}

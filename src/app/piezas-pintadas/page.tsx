@@ -138,6 +138,9 @@ function PiezasPintadasPage() {
   }, []);
 
   const registrarLote = async () => {
+    // Prevenir doble submit
+    if (loading) return;
+    
     if (!idPieza || !idPintura || !idCabina || cantidad <= 0) {
       alert("Seleccioná pieza, pintura, cabina y una cantidad válida.");
       return;
@@ -192,12 +195,18 @@ function PiezasPintadasPage() {
         ).join("\n");
       }
 
+      // Warning de límite excedido
+      let warningLimite = "";
+      if (resultado.warning_limite) {
+        warningLimite = `\n\n⚠️ ADVERTENCIA: ${resultado.warning_limite}`;
+      }
+
       // Info de cabina
       const infoCabina = resultado.cabina 
-        ? `\n\nCabina: ${resultado.cabina.nombre}\nPiezas hoy: ${resultado.cabina.piezas_hoy}/${resultado.cabina.piezas_restantes + resultado.cabina.piezas_hoy} (${resultado.cabina.porcentaje_uso}% usado)\nPistolas: ${resultado.cabina.pistolas?.join(", ") || "N/A"}\nHornos: ${resultado.cabina.hornos?.join(", ") || "N/A"}`
+        ? `\n\nCabina: ${resultado.cabina.nombre}\nPiezas hoy: ${resultado.cabina.piezas_hoy}/${resultado.cabina.piezas_restantes + resultado.cabina.piezas_hoy} (${resultado.cabina.porcentaje_uso}% usado)${resultado.cabina.excedio_limite ? ' ⚠️ LÍMITE EXCEDIDO' : ''}\nPistolas: ${resultado.cabina.pistolas?.join(", ") || "N/A"}\nHornos: ${resultado.cabina.hornos?.join(", ") || "N/A"}`
         : "";
 
-      alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg${infoCabina}${mensajeAlertas}`);
+      alert(`✅ Piezas pintadas registradas correctamente.\n\nConsumo total: ${resultado.consumo_total_kg} kg\nStock restante de pintura: ${resultado.stock_restante_kg} kg${infoCabina}${warningLimite}${mensajeAlertas}`);
 
       //Recargar tabla, piezas disponibles y cabinas
       const [lotesRes, piezasRes, cabinasRes] = await Promise.all([
@@ -344,14 +353,14 @@ function PiezasPintadasPage() {
                   const cabina = cabinas.find(c => c.id_cabina === Number(value));
                   if (cabina) {
                     const piezasRestantes = cabina.max_piezas_diarias - cabina.piezas_hoy;
-                    const puedeUsar = piezasRestantes >= cantidad;
+                    const excedeLimit = piezasRestantes < cantidad;
                     setCabinaInfo({
                       nombre: cabina.nombre,
                       piezas_hoy: cabina.piezas_hoy,
                       piezas_restantes: piezasRestantes,
                       porcentaje_uso: cabina.porcentaje_uso || 0,
-                      puede_usar: puedeUsar,
-                      mensaje: puedeUsar ? "" : `La cabina solo puede pintar ${piezasRestantes} piezas más hoy`,
+                      puede_usar: true, // Siempre puede usar, solo es warning
+                      mensaje: excedeLimit ? `⚠️ Se excederá el límite recomendado (${piezasRestantes} piezas disponibles)` : "",
                       nivel_alerta: cabina.porcentaje_uso >= 90 ? "danger" : cabina.porcentaje_uso >= 75 ? "warning" : "ok",
                       pistolas: cabina.pistolas?.map(p => p.nombre) || [],
                       hornos: cabina.hornos?.map(h => h.nombre) || [],
@@ -400,8 +409,8 @@ function PiezasPintadasPage() {
                   </p>
                   {/* Equipos asignados */}
                   <div className="mt-2 text-sm">
-                    <p>🔫 Pistolas: <strong>{cabinaInfo.pistolas.join(", ") || "Ninguna"}</strong></p>
-                    <p>🔥 Hornos: <strong>{cabinaInfo.hornos.join(", ") || "Ninguno"}</strong></p>
+                    <p>Pistolas: <strong>{cabinaInfo.pistolas.join(", ") || "Ninguna"}</strong></p>
+                    <p>Hornos: <strong>{cabinaInfo.hornos.join(", ") || "Ninguno"}</strong></p>
                   </div>
                   {/* Barra de progreso */}
                   <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
@@ -419,9 +428,9 @@ function PiezasPintadasPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {cabinaInfo.porcentaje_uso}% de capacidad utilizada
                   </p>
-                  {!cabinaInfo.puede_usar && (
-                    <p className="mt-2 text-sm text-red-600 font-semibold">
-                      ⚠️ {cabinaInfo.mensaje}
+                  {cabinaInfo.mensaje && (
+                    <p className="mt-2 text-sm text-yellow-600 font-semibold">
+                      {cabinaInfo.mensaje}
                     </p>
                   )}
                 </div>

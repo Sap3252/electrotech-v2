@@ -59,10 +59,6 @@ export async function getSession(): Promise<SessionData | null> {
   try {
     const decoded = jwt.verify(token, SECRET) as { id_usuario: number };
 
-    // ⚠️ IMPORTANTE:
-    // el token debe tener al menos { id_usuario: number }
-    // cuando lo crees en el login usá: createToken({ id_usuario: usuario.id_usuario, ... })
-
     // Solo obtener grupos ACTIVOS (id_estado = 1)
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT g.nombre 

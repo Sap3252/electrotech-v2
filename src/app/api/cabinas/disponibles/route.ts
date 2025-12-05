@@ -5,6 +5,13 @@ import { RowDataPacket } from "mysql2";
 // GET: Obtener cabinas disponibles (activas) para pintar
 export async function GET() {
   try {
+    // Reset automático: Si el último uso fue de otro día, resetear piezas_hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    await pool.query(
+      `UPDATE cabina SET piezas_hoy = 0 WHERE ultimo_uso IS NOT NULL AND DATE(ultimo_uso) < ?`,
+      [hoy]
+    );
+
     const [cabinas] = await pool.query<RowDataPacket[]>(`
       SELECT 
         c.id_cabina,
@@ -13,6 +20,7 @@ export async function GET() {
         c.max_piezas_diarias,
         c.piezas_hoy,
         c.estado,
+        c.ultimo_uso,
         ROUND((c.piezas_hoy / c.max_piezas_diarias) * 100, 1) AS porcentaje_uso,
         (c.max_piezas_diarias - c.piezas_hoy) AS disponible
       FROM cabina c

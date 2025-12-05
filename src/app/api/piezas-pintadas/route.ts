@@ -56,6 +56,7 @@ export async function GET() {
 // 2) A partir de acá seguís con el cálculo de consumo + INSERT
 
 
+// Lock para prevenir requests duplicados simultáneos
 // ============================
 // POST: crear nueva pieza pintada
 // ============================
@@ -67,11 +68,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
-  const { id_pieza, id_pintura, id_cabina, cantidad, espesor_um, densidad_g_cm3, estrategia } = await req.json();
+  const body = await req.json();
+  const { id_pieza, id_pintura, id_cabina, cantidad, espesor_um, densidad_g_cm3, estrategia } = body;
 
   try {
     // 0) Validar que se seleccionó una cabina
     if (!id_cabina) {
+      
       return NextResponse.json(
         { error: "Debe seleccionar una cabina para pintar" },
         { status: 400 }
@@ -80,7 +83,7 @@ export async function POST(req: Request) {
 
     // 0.1) Obtener información completa de la cabina
     const [cabinaRows] = await pool.query<RowDataPacket[]>(
-      `SELECT id_cabina, nombre, descripcion, max_piezas_diarias, piezas_hoy, estado
+      `SELECT id_cabina, nombre, descripcion, max_piezas_diarias, piezas_hoy, estado, ultimo_uso
        FROM cabina
        WHERE id_cabina = ?`,
       [id_cabina]
@@ -90,7 +93,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cabina no encontrada" }, { status: 404 });
     }
 
-    const cabinaData = cabinaRows[0];
+    let cabinaData = cabinaRows[0];
+
+    // 0.2) Reset automático: Si el último uso fue de otro día, resetear piezas_hoy
+    const hoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const ultimoUso = cabinaData.ultimo_uso ? new Date(cabinaData.ultimo_uso).toISOString().split('T')[0] : null;
+    
+    if (ultimoUso && ultimoUso !== hoy) {
+      // El último uso fue otro día, resetear contador
+      await pool.query(
+        `UPDATE cabina SET piezas_hoy = 0, ultimo_uso = CURDATE() WHERE id_cabina = ?`,
+        [id_cabina]
+      );
+      cabinaData.piezas_hoy = 0;
+      console.log(`[Reset Automático] Cabina "${cabinaData.nombre}" reseteada. Último uso: ${ultimoUso}, Hoy: ${hoy}`);
+    } else if (!ultimoUso) {
+      // Primera vez que se usa, establecer fecha
+      await pool.query(
+        `UPDATE cabina SET ultimo_uso = CURDATE() WHERE id_cabina = ?`,
+        [id_cabina]
+      );
+    }
     
     if (cabinaData.estado !== 'activa') {
       return NextResponse.json(
@@ -99,17 +122,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar límite diario
+    // Verificar límite diario (solo warning, no bloquea)
     const piezas_restantes = cabinaData.max_piezas_diarias - Number(cabinaData.piezas_hoy);
-    if (piezas_restantes < cantidad) {
-      return NextResponse.json(
-        { 
-          error: `La cabina "${cabinaData.nombre}" solo puede pintar ${piezas_restantes} piezas más hoy (límite diario: ${cabinaData.max_piezas_diarias})`,
-          piezas_restantes,
-          limite_diario: cabinaData.max_piezas_diarias
-        },
-        { status: 400 }
-      );
+    const excedeLimit = piezas_restantes < cantidad;
+    let warningLimite: string | null = null;
+    if (excedeLimit) {
+      warningLimite = `Se excedió el límite recomendado. La cabina "${cabinaData.nombre}" tenía ${piezas_restantes} piezas disponibles de su límite diario (${cabinaData.max_piezas_diarias}), pero se pintaron ${cantidad}.`;
     }
 
     // Obtener pistolas activas de la cabina
@@ -206,10 +224,31 @@ export async function POST(req: Request) {
     }
 
     // 5) Insertar registro en PiezaPintada y ejecutar actualizaciones relacionadas
-    // Usamos una transacción para mantener consistencia entre inserciones/actualizaciones
+    // Usamos una transacción con lock para evitar duplicados
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+
+      // Verificar duplicados DENTRO de la transacción con lock
+      const [duplicadoRows] = await conn.query<RowDataPacket[]>(
+        `SELECT id_pieza_pintada FROM PiezaPintada 
+         WHERE id_pieza = ? AND id_pintura = ? AND id_cabina = ? AND cantidad = ?
+         AND fecha > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+         FOR UPDATE`,
+        [id_pieza, id_pintura, id_cabina, cantidad]
+      );
+
+      if (duplicadoRows.length > 0) {
+        await conn.rollback();
+        conn.release();
+        
+        console.log(`[Duplicado Detectado] Registro reciente encontrado en transacción`);
+        return NextResponse.json({ 
+          ok: true, 
+          duplicado: true,
+          mensaje: "Registro ya procesado" 
+        });
+      }
 
       const insertResult = await conn.query<ResultSetHeader>(
         `INSERT INTO PiezaPintada (id_pieza, id_pintura, id_cabina, cantidad, consumo_estimado_kg, fecha)
@@ -310,9 +349,9 @@ export async function POST(req: Request) {
         [id_cabina, cantidad, id_pieza, id_pintura, horas_trabajo, gasConsumido]
       );
 
-      // Actualizar contador de piezas_hoy en cabina
+      // Actualizar contador de piezas_hoy y ultimo_uso en cabina
       await conn.query(
-        `UPDATE cabina SET piezas_hoy = piezas_hoy + ? WHERE id_cabina = ?`,
+        `UPDATE cabina SET piezas_hoy = piezas_hoy + ?, ultimo_uso = CURDATE() WHERE id_cabina = ?`,
         [cantidad, id_cabina]
       );
 
@@ -332,9 +371,11 @@ export async function POST(req: Request) {
           piezas_hoy: nuevas_piezas_hoy,
           piezas_restantes: cabinaData.max_piezas_diarias - nuevas_piezas_hoy,
           porcentaje_uso: nuevo_porcentaje,
+          excedio_limite: excedeLimit,
           pistolas: pistolasRows.map(p => p.nombre),
           hornos: hornosRows.map(h => h.nombre)
         },
+        warning_limite: warningLimite,
         alertas: alertas.map(a => ({ 
           tipo_equipo: a.tipo_equipo,
           nombre_equipo: a.nombre_equipo,
@@ -346,12 +387,15 @@ export async function POST(req: Request) {
     } catch (txErr) {
       await conn.rollback();
       console.error("Transaction error POST pieza pintada:", txErr);
+      
       return NextResponse.json({ error: "Error interno" }, { status: 500 });
     } finally {
       conn.release();
+      
     }
   } catch (error) {
     console.error("Error POST pieza pintada:", error);
+    
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

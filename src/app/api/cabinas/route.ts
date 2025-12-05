@@ -5,6 +5,13 @@ import { RowDataPacket, ResultSetHeader } from "mysql2";
 // GET: Obtener todas las cabinas con sus pistolas y hornos
 export async function GET() {
   try {
+    // Reset automático: Si el último uso fue de otro día, resetear piezas_hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    await pool.query(
+      `UPDATE cabina SET piezas_hoy = 0 WHERE ultimo_uso IS NOT NULL AND DATE(ultimo_uso) < ?`,
+      [hoy]
+    );
+
     // Obtener cabinas
     const [cabinas] = await pool.query<RowDataPacket[]>(`
       SELECT 
