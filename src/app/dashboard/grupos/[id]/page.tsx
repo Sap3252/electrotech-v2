@@ -76,11 +76,95 @@ export default function EditarPermisosGrupo({
   }, [idGrupo, cargarDatos]);
 
   const toggleComponente = (idComponente: number) => {
-    setComponentes((prev) =>
-      prev.map((c) =>
-        c.id_componente === idComponente ? { ...c, asignado: !c.asignado } : c
-      )
-    );
+    setComponentes((prev) => {
+      // Encontrar el componente objetivo
+      const objetivo = prev.find((c) => c.id_componente === idComponente);
+      if (!objetivo) return prev;
+
+      const formulario = objetivo.formulario;
+      const currentAsignado = !!objetivo.asignado;
+      const nuevoAsignado = !currentAsignado;
+      // Si estamos DESACTIVANDO el componente, también desactivamos en cascada
+
+      const nivelObjetivo = getNivel(objetivo.nombre, formulario);
+
+      // Si estamos DESACTIVANDO el componente, también desactivamos en cascada
+      // a todos los hijos (niveles mayores) que estén dentro del mismo formulario.
+      if (!nuevoAsignado) {
+        // Ordenar componentes del mismo formulario según la jerarquía visual
+        const compsFormulario = ordenarPorJerarquia(
+          prev.filter((p) => p.formulario === formulario),
+          formulario
+        );
+
+        const idx = compsFormulario.findIndex((c) => c.id_componente === idComponente);
+        if (idx === -1) {
+          // no encontrado en esa lista, fallback: solo desactivar el objetivo
+          return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: nuevoAsignado } : c));
+        }
+
+        const idsAHacerFalse: number[] = [];
+
+        for (let i = idx + 1; i < compsFormulario.length; i++) {
+          const nivelSig = getNivel(compsFormulario[i].nombre, formulario);
+          // si el siguiente elemento es de un nivel mayor, es hijo; si es menor o igual, se rompe
+          if (nivelSig > nivelObjetivo) {
+            idsAHacerFalse.push(compsFormulario[i].id_componente);
+          } else {
+            break;
+          }
+        }
+
+        return prev.map((c) => {
+          if (c.id_componente === idComponente) return { ...c, asignado: nuevoAsignado };
+          if (idsAHacerFalse.includes(c.id_componente)) return { ...c, asignado: false };
+          return c;
+        });
+      }
+
+      // Si estamos ACTIVANDO, validar que todos los ancestros estén activos.
+      if (nuevoAsignado) {
+        // Si el componente es de nivel 0 no hay ancestros que validar
+        if (nivelObjetivo === 0) {
+          return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: nuevoAsignado } : c));
+        }
+
+        // Construir la lista de componentes del formulario ordenados
+        const compsFormulario = ordenarPorJerarquia(
+          prev.filter((p) => p.formulario === formulario),
+          formulario
+        );
+        const idxTarget = compsFormulario.findIndex((c) => c.id_componente === idComponente);
+        if (idxTarget === -1) return prev;
+
+        // Recolectar los ancestros necesarios (primer elemento con nivel menor, luego su ancestro, etc.)
+        const ancestros: Componente[] = [];
+        let nivelCursor = nivelObjetivo;
+        for (let i = idxTarget - 1; i >= 0; i--) {
+          const nivelI = getNivel(compsFormulario[i].nombre, formulario);
+          if (nivelI < nivelCursor) {
+            ancestros.push(compsFormulario[i]);
+            nivelCursor = nivelI;
+            if (nivelCursor === 0) break;
+          }
+        }
+
+        // Verificar que todos los ancestros estén asignados en el estado actual
+        for (const anc of ancestros) {
+          const ancEstado = prev.find((p) => p.id_componente === anc.id_componente);
+          if (!ancEstado || !ancEstado.asignado) {
+            alert(`Debes activar primero: ${anc.nombre} (nivel ${getNivel(anc.nombre, formulario)})`);
+            return prev; // no permitir activar el hijo
+          }
+        }
+
+        // Todos los ancestros están activos -> permitir activar el componente
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: nuevoAsignado } : c));
+      }
+
+      // Por defecto, togglear (caso ya cubierto arriba)
+      return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: nuevoAsignado } : c));
+    });
   };
 
   const guardarPermisos = async () => {
@@ -175,8 +259,14 @@ export default function EditarPermisosGrupo({
   ];
 
   const JERARQUIA_REPORTES: { nombre: string; nivel: number }[] = [
-    { nombre: "Acceso Reportes Maquinarias", nivel: 0 },
-    { nombre: "Acceso Reporte", nivel: 0 },
+    // Submenu principal para Maquinarias
+    { nombre: "Submenu Maquinarias", nivel: 0 },
+    // Reportes (se muestran con sangría bajo el submenu)
+    { nombre: "Acceso - Uso Cabinas", nivel: 1 },
+    { nombre: "Acceso - Productividad Diaria", nivel: 1 },
+    { nombre: "Acceso - Mantenimiento Pistolas", nivel: 1 },
+    { nombre: "Acceso - Mantenimiento Hornos", nivel: 1 },
+    { nombre: "Acceso - Consumo Gas", nivel: 1 },
   ];
 
   // Ordenar componentes según jerarquía definida
@@ -233,6 +323,18 @@ export default function EditarPermisosGrupo({
     return prefijo;
   };
 
+  // Extraer componentes que pertenecen específicamente a Reportes Maquinarias
+  const reportesMaquinariaComps = componentes.filter((c) => {
+    const ruta = c.ruta ?? "";
+    const form = c.formulario ?? "";
+    return (
+      ruta.startsWith("/reportes/maquinarias") ||
+      (form.toLowerCase().includes("reporte") && form.toLowerCase().includes("maquinari"))
+    );
+  });
+
+  const reportesFormularios = new Set(reportesMaquinariaComps.map((c) => c.formulario));
+
   return (
     <div className="min-h-screen bg-slate-100 p-10">
       <div className="mb-6 flex justify-between items-center">
@@ -257,40 +359,86 @@ export default function EditarPermisosGrupo({
             {Object.entries(componentesPorModulo).map(([modulo, formularios]) => (
               <div key={modulo} className="border rounded-lg p-4">
                 <h3 className="font-bold text-lg mb-4">{modulo}</h3>
-                
+
                 {Object.entries(formularios).map(([formulario, comps]) => (
-                  <div key={formulario} className="ml-4 mb-4">
-                    <h4 className="font-semibold text-md mb-2">{formulario}</h4>
-                    
-                    <div className="space-y-1">
-                      {ordenarPorJerarquia(comps, formulario).map((comp, idx) => {
-                        const prefijo = getPrefijoArbol(comp.nombre, formulario, comps, idx);
-                        
-                        return (
-                          <div
-                            key={comp.id_componente}
-                            className="flex items-center font-mono text-sm"
-                          >
-                            <span className="text-gray-400 select-none whitespace-pre">{prefijo}</span>
-                            <Checkbox
-                              id={`comp-${comp.id_componente}`}
-                              checked={comp.asignado}
-                              onCheckedChange={() => toggleComponente(comp.id_componente)}
-                            />
-                            <Label
-                              htmlFor={`comp-${comp.id_componente}`}
-                              className="cursor-pointer ml-2 font-sans"
+                  reportesFormularios.has(formulario) ? null : (
+                    <div key={formulario} className="ml-4 mb-4">
+                      <h4 className="font-semibold text-md mb-2">{formulario}</h4>
+
+                      <div className="space-y-1">
+                        {ordenarPorJerarquia(comps, formulario).map((comp, idx) => {
+                          const prefijo = getPrefijoArbol(comp.nombre, formulario, comps, idx);
+                          const nivel = getNivel(comp.nombre, formulario);
+                          const indent = nivel === 0 ? 0 : nivel * 12;
+
+                          return (
+                            <div
+                              key={comp.id_componente}
+                              className="flex items-center font-mono text-sm"
+                              style={{ marginLeft: `${indent}px` }}
                             >
-                              {comp.nombre}
-                            </Label>
-                          </div>
-                        );
-                      })}
+                              <span className="text-gray-400 select-none whitespace-pre">{prefijo}</span>
+                              <Checkbox
+                                id={`comp-${comp.id_componente}`}
+                                checked={comp.asignado}
+                                onCheckedChange={() => toggleComponente(comp.id_componente)}
+                              />
+                              <Label
+                                htmlFor={`comp-${comp.id_componente}`}
+                                className="cursor-pointer ml-2 font-sans"
+                              >
+                                {comp.nombre}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )
                 ))}
               </div>
             ))}
+
+            {reportesMaquinariaComps.length > 0 && (
+              <div className="border rounded-lg p-4">
+                <h3 className="font-bold text-lg mb-4">Reportes Maquinarias</h3>
+
+                <div className="flex gap-6">
+                  <div className="w-64">
+                    {reportesMaquinariaComps.filter(c => getNivel(c.nombre, c.formulario) === 0).map((comp) => (
+                      <div key={comp.id_componente} className="flex items-center font-mono text-sm mb-1">
+                        <Checkbox
+                          id={`comp-${comp.id_componente}`}
+                          checked={comp.asignado}
+                          onCheckedChange={() => toggleComponente(comp.id_componente)}
+                        />
+                        <Label htmlFor={`comp-${comp.id_componente}`} className="cursor-pointer ml-2 font-sans">
+                          {comp.nombre}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="space-y-1">
+                      {reportesMaquinariaComps.filter(c => getNivel(c.nombre, c.formulario) > 0).map((comp, idx) => (
+                        <div key={comp.id_componente} className="flex items-center font-mono text-sm">
+                          <span className="text-gray-400 select-none whitespace-pre mr-2">{getPrefijoArbol(comp.nombre, comp.formulario, reportesMaquinariaComps, idx)}</span>
+                          <Checkbox
+                            id={`comp-${comp.id_componente}`}
+                            checked={comp.asignado}
+                            onCheckedChange={() => toggleComponente(comp.id_componente)}
+                          />
+                          <Label htmlFor={`comp-${comp.id_componente}`} className="cursor-pointer ml-2 font-sans">
+                            {comp.nombre}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex gap-4">

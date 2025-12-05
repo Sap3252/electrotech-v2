@@ -22,7 +22,7 @@ export async function GET() {
       `
       SELECT 
         pp.id_pieza_pintada,
-        pp.fecha,
+        DATE_FORMAT(pp.fecha, '%Y-%m-%d %H:%i:%s') AS fecha,
         pp.cantidad,
         pp.consumo_estimado_kg,
         pp.id_cabina,
@@ -205,24 +205,29 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5) Insertar registro (el trigger actualizará contadores y horas)
-    await pool.query<ResultSetHeader>(
-      `INSERT INTO PiezaPintada (id_pieza, id_pintura, id_cabina, cantidad, consumo_estimado_kg, fecha)
-       VALUES (?, ?, ?, ?, ?, CURDATE())`,
-      [id_pieza, id_pintura, id_cabina, cantidad, consumo_total_kg]
-    );
+    // 5) Insertar registro en PiezaPintada y ejecutar actualizaciones relacionadas
+    // Usamos una transacción para mantener consistencia entre inserciones/actualizaciones
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
 
-    // 6) Descontar la pintura consumida del stock
-    await pool.query(
-      `UPDATE Pintura SET cantidad_kg = cantidad_kg - ? WHERE id_pintura = ?`,
-      [consumo_total_kg, id_pintura]
-    );
+      const insertResult = await conn.query<ResultSetHeader>(
+        `INSERT INTO PiezaPintada (id_pieza, id_pintura, id_cabina, cantidad, consumo_estimado_kg, fecha)
+          VALUES (?, ?, ?, ?, ?, NOW())`,
+        [id_pieza, id_pintura, id_cabina, cantidad, consumo_total_kg]
+      );
 
-    // 7) Usar el sistema Observer para generar alertas
-    const horas_trabajo = cantidad * 0.1; // Aproximado: 0.1 horas por pieza
-    
-    // Construir objeto cabina completo para el Observer
-    const cabina: Cabina = {
+      // 6) Descontar la pintura consumida del stock
+      await conn.query(
+        `UPDATE Pintura SET cantidad_kg = cantidad_kg - ? WHERE id_pintura = ?`,
+        [consumo_total_kg, id_pintura]
+      );
+
+      // 7) Usar el sistema Observer para generar alertas
+      const horas_trabajo = cantidad * 0.1; // Aproximado: 0.1 horas por pieza
+
+      // Construir objeto cabina completo para el Observer
+      const cabina: Cabina = {
       id_cabina: cabinaData.id_cabina,
       nombre: cabinaData.nombre,
       descripcion: cabinaData.descripcion,
@@ -250,50 +255,101 @@ export async function POST(req: Request) {
         estado: h.estado
       }))
     };
+      const cabinaSubject = getCabinaSubject();
+      const alertas = cabinaSubject.registerPainting({
+        id_cabina: id_cabina,
+        cabina: cabina,
+        cantidad_piezas: cantidad,
+        horas_trabajo: horas_trabajo,
+        fecha: new Date()
+      });
 
-    const cabinaSubject = getCabinaSubject();
-    const alertas = cabinaSubject.registerPainting({
-      id_cabina: id_cabina,
-      cabina: cabina,
-      cantidad_piezas: cantidad,
-      horas_trabajo: horas_trabajo,
-      fecha: new Date()
-    });
+      // 8) Guardar alertas en la base de datos
+      for (const alerta of alertas) {
+        await conn.query(
+          `INSERT INTO alertasmaquinaria (tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, fecha)
+           VALUES (?, ?, ?, ?, ?, NOW())`,
+          [alerta.tipo_equipo, alerta.id_equipo, alerta.tipo_alerta, alerta.mensaje, alerta.nivel]
+        );
+      }
 
-    // 8) Guardar alertas en la base de datos
-    for (const alerta of alertas) {
-      await pool.query(
-        `INSERT INTO alertasmaquinaria (tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, fecha)
-         VALUES (?, ?, ?, ?, ?, NOW())`,
-        [alerta.tipo_equipo, alerta.id_equipo, alerta.tipo_alerta, alerta.mensaje, alerta.nivel]
+      // 9) Persistir uso en cabinahistorial, actualizar horas de pistolas/hornos y contador de piezas en cabina
+      // Assumptions:
+      // - horas_trabajo es el total para la operacion; se distribuye equitativamente entre pistolas/hornos asignados
+      // - gas_consumido se calcula como horas_trabajo * average(gasto_gas_hora) of assigned hornos
+      const numPistolas = pistolasRows.length || 1;
+      const numHornos = hornosRows.length || 1;
+      const horasPorPistola = horas_trabajo / numPistolas;
+      const horasPorHorno = horas_trabajo / numHornos;
+
+      // Update pistolas horas_uso
+      for (const p of pistolasRows) {
+        await conn.query(
+          `UPDATE pistola SET horas_uso = horas_uso + ? WHERE id_pistola = ?`,
+          [horasPorPistola, p.id_pistola]
+        );
+      }
+
+      // Update hornos horas_uso and compute gas
+      let sumaGastoHora = 0;
+      for (const h of hornosRows) {
+        sumaGastoHora += Number(h.gasto_gas_hora) || 0;
+        await conn.query(
+          `UPDATE horno SET horas_uso = horas_uso + ? WHERE id_horno = ?`,
+          [horasPorHorno, h.id_horno]
+        );
+      }
+
+      const gastoPromedioHora = numHornos > 0 ? sumaGastoHora / numHornos : 0;
+      const gasConsumido = horas_trabajo * gastoPromedioHora;
+
+      // Insertar registro en cabinahistorial
+      await conn.query(
+        `INSERT INTO cabinahistorial (id_cabina, fecha, piezas_pintadas, id_pieza, id_pintura, horas_trabajo, gas_consumido)
+         VALUES (?, NOW(), ?, ?, ?, ?, ?)`,
+        [id_cabina, cantidad, id_pieza, id_pintura, horas_trabajo, gasConsumido]
       );
+
+      // Actualizar contador de piezas_hoy en cabina
+      await conn.query(
+        `UPDATE cabina SET piezas_hoy = piezas_hoy + ? WHERE id_cabina = ?`,
+        [cantidad, id_cabina]
+      );
+
+      await conn.commit();
+
+      // Preparar respuesta usando los datos ya calculados
+      const nuevas_piezas_hoy = Number(cabinaData.piezas_hoy) + cantidad;
+      const nuevo_porcentaje = Math.round((nuevas_piezas_hoy / cabinaData.max_piezas_diarias) * 100);
+
+      return NextResponse.json({ 
+        ok: true, 
+        consumo_por_pieza_kg: consumo_por_pieza.toFixed(4),
+        consumo_total_kg: consumo_total_kg.toFixed(4),
+        stock_restante_kg: (pinturaDisponible - consumo_total_kg).toFixed(2),
+        cabina: {
+          nombre: cabinaData.nombre,
+          piezas_hoy: nuevas_piezas_hoy,
+          piezas_restantes: cabinaData.max_piezas_diarias - nuevas_piezas_hoy,
+          porcentaje_uso: nuevo_porcentaje,
+          pistolas: pistolasRows.map(p => p.nombre),
+          hornos: hornosRows.map(h => h.nombre)
+        },
+        alertas: alertas.map(a => ({ 
+          tipo_equipo: a.tipo_equipo,
+          nombre_equipo: a.nombre_equipo,
+          tipo: a.tipo_alerta, 
+          mensaje: a.mensaje, 
+          nivel: a.nivel 
+        }))
+      });
+    } catch (txErr) {
+      await conn.rollback();
+      console.error("Transaction error POST pieza pintada:", txErr);
+      return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    } finally {
+      conn.release();
     }
-
-    // Calcular nuevo estado de la cabina
-    const nuevas_piezas_hoy = Number(cabinaData.piezas_hoy) + cantidad;
-    const nuevo_porcentaje = Math.round((nuevas_piezas_hoy / cabinaData.max_piezas_diarias) * 100);
-
-    return NextResponse.json({ 
-      ok: true, 
-      consumo_por_pieza_kg: consumo_por_pieza.toFixed(4),
-      consumo_total_kg: consumo_total_kg.toFixed(4),
-      stock_restante_kg: (pinturaDisponible - consumo_total_kg).toFixed(2),
-      cabina: {
-        nombre: cabinaData.nombre,
-        piezas_hoy: nuevas_piezas_hoy,
-        piezas_restantes: cabinaData.max_piezas_diarias - nuevas_piezas_hoy,
-        porcentaje_uso: nuevo_porcentaje,
-        pistolas: pistolasRows.map(p => p.nombre),
-        hornos: hornosRows.map(h => h.nombre)
-      },
-      alertas: alertas.map(a => ({ 
-        tipo_equipo: a.tipo_equipo,
-        nombre_equipo: a.nombre_equipo,
-        tipo: a.tipo_alerta, 
-        mensaje: a.mensaje, 
-        nivel: a.nivel 
-      }))
-    });
   } catch (error) {
     console.error("Error POST pieza pintada:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
