@@ -59,7 +59,7 @@ export interface MachineryAlert {
 // ==========================================
 // INTERFACE OBSERVER
 // ==========================================
-export interface MachineryObserver {
+export interface CabinaObserver {
   update(event: PaintingEvent): MachineryAlert[];
 }
 
@@ -67,13 +67,13 @@ export interface MachineryObserver {
 // SUBJECT (Observable)
 // ==========================================
 export class CabinaSubject {
-  private observers: MachineryObserver[] = [];
+  private observers: CabinaObserver[] = [];
 
-  addObserver(observer: MachineryObserver): void {
+  addObserver(observer: CabinaObserver): void {
     this.observers.push(observer);
   }
 
-  removeObserver(observer: MachineryObserver): void {
+  removeObserver(observer: CabinaObserver): void {
     const index = this.observers.indexOf(observer);
     if (index > -1) {
       this.observers.splice(index, 1);
@@ -98,7 +98,7 @@ export class CabinaSubject {
 // ==========================================
 // OBSERVER: Límite Diario de Cabina
 // ==========================================
-export class LimiteDiarioCabinaObserver implements MachineryObserver {
+export class LimiteDiarioCabinaObserver implements CabinaObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
     const cabina = event.cabina;
@@ -147,7 +147,7 @@ export class LimiteDiarioCabinaObserver implements MachineryObserver {
 // ==========================================
 // OBSERVER: Mantenimiento de Pistolas
 // ==========================================
-export class MantenimientoPistolaObserver implements MachineryObserver {
+export class MantenimientoPistolaObserver implements CabinaObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
     const cabina = event.cabina;
@@ -188,7 +188,7 @@ export class MantenimientoPistolaObserver implements MachineryObserver {
 // ==========================================
 // OBSERVER: Mantenimiento de Hornos
 // ==========================================
-export class MantenimientoHornoObserver implements MachineryObserver {
+export class MantenimientoHornoObserver implements CabinaObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
     const cabina = event.cabina;
@@ -229,7 +229,7 @@ export class MantenimientoHornoObserver implements MachineryObserver {
 // ==========================================
 // OBSERVER: Consumo de Gas de Hornos
 // ==========================================
-export class ConsumoGasObserver implements MachineryObserver {
+export class ConsumoGasObserver implements CabinaObserver {
   private limiteGasDiario: number = 100; // m³ de gas diario máximo (configurable)
 
   constructor(limiteGasDiario?: number) {
@@ -268,7 +268,7 @@ export class ConsumoGasObserver implements MachineryObserver {
 // ==========================================
 // OBSERVER: Estadísticas y Logging
 // ==========================================
-export class EstadisticasCabinaObserver implements MachineryObserver {
+export class EstadisticasCabinaObserver implements CabinaObserver {
   private registros: Map<number, { total_piezas: number; total_horas: number }> = new Map();
 
   update(event: PaintingEvent): MachineryAlert[] {
