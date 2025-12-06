@@ -239,7 +239,7 @@ export default function EmpleadosPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Gestión de Empleados</h1>
           <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            ← Volver al Dashboard
+            Volver al Dashboard
           </Button>
         </div>
 

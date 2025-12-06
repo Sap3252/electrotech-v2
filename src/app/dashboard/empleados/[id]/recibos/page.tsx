@@ -358,8 +358,8 @@ export default function RecibosEmpleadoPage({ params }: { params: Promise<{ id: 
                 + Generar Recibo
               </Button>
             </ProtectedComponent>
-            <Button variant="outline" onClick={() => router.push("/dashboard/empleados")}>
-              ← Volver a Empleados
+            <Button variant="outline" onClick={() => router.push("/dashboard/recibos")}>
+              Volver a Recibos
             </Button>
           </div>
         </div>

@@ -74,6 +74,7 @@ export class CabinaSubject {
   }
 
   removeObserver(observer: MachineryObserver): void {
+  
     const index = this.observers.indexOf(observer);
     if (index > -1) {
       this.observers.splice(index, 1);
@@ -246,7 +247,7 @@ export class ConsumoGasObserver implements MachineryObserver {
 
     for (const horno of cabina.hornos) {
       const gasConsumido = horno.gasto_gas_hora * event.horas_trabajo;
-      
+
       // Alerta si el consumo de gas por operación es alto
       if (gasConsumido > 10) { // Más de 10 m³ por operación
         alerts.push({
@@ -295,13 +296,13 @@ export class EstadisticasCabinaObserver implements MachineryObserver {
 // ==========================================
 export function createCabinaSubjectWithObservers(): CabinaSubject {
   const subject = new CabinaSubject();
-  
+
   subject.addObserver(new LimiteDiarioCabinaObserver());
   subject.addObserver(new MantenimientoPistolaObserver());
   subject.addObserver(new MantenimientoHornoObserver());
   subject.addObserver(new ConsumoGasObserver());
   subject.addObserver(new EstadisticasCabinaObserver());
-  
+
   return subject;
 }
 

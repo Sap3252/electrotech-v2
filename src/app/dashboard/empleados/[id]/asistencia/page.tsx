@@ -389,7 +389,7 @@ export default function AsistenciaEmpleadoPage({ params }: { params: Promise<{ i
             <p className="text-gray-600">DNI: {empleado.dni}</p>
           </div>
           <Button variant="outline" onClick={() => router.push("/dashboard/empleados")}>
-            ← Volver a Empleados
+            Volver a Empleados
           </Button>
         </div>
 
