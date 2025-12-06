@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatearFechaHora } from "@/lib/utils";
 
 type Auditoria = {
   id: number;
@@ -62,17 +63,6 @@ export function ModalAuditorias({
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatearFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleString("es-AR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
   };
 
   const formatearDuracion = (segundos: number | null) => {
@@ -126,11 +116,11 @@ export function ModalAuditorias({
                 {auditorias.map((auditoria) => (
                   <TableRow key={auditoria.id}>
                     <TableCell className="whitespace-nowrap">
-                      {formatearFecha(auditoria.fecha_hora_login)}
+                      {formatearFechaHora(auditoria.fecha_hora_login)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {auditoria.fecha_hora_logout
-                        ? formatearFecha(auditoria.fecha_hora_logout)
+                        ? formatearFechaHora(auditoria.fecha_hora_logout)
                         : "-"}
                     </TableCell>
                     <TableCell>

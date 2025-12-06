@@ -75,7 +75,7 @@ export default function Dashboard() {
         {/* #region CORE 1 - Piezas & Pinturas */}
         <Card className="shadow transition p-4">
             <CardHeader>
-              <CardTitle>Core 1 — Piezas & Pinturas</CardTitle>
+              <CardTitle>Core 1 - Piezas & Pinturas</CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -111,7 +111,7 @@ export default function Dashboard() {
         {/* #region CORE 2 - Remitos & Facturación */}
           <Card className="shadow transition p-4">
             <CardHeader>
-              <CardTitle>Core 2 — Remitos & Facturación</CardTitle>
+              <CardTitle>Core 2 - Remitos & Facturación</CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -150,7 +150,7 @@ export default function Dashboard() {
         {/* #region CORE 3 - Maquinaria */}
         <Card className="shadow transition p-4">
             <CardHeader>
-              <CardTitle>Core 3 — Maquinaria</CardTitle>
+              <CardTitle>Core 3 - Maquinaria</CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -178,7 +178,7 @@ export default function Dashboard() {
         {/* #region CORE 4 - Empleados */}
         <Card className="shadow transition p-4">
             <CardHeader>
-              <CardTitle>Core 4 — Empleados</CardTitle>
+              <CardTitle>Core 4 - Empleados</CardTitle>
             </CardHeader>
 
             <CardContent>

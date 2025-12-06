@@ -16,6 +16,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { ModalDetalleRemito } from "@/components/remitos/ModalDetalleRemito";
+import { formatearFecha } from "@/lib/utils";
 
 interface Cliente {
   id_cliente: number;
@@ -378,7 +379,7 @@ function RemitosPage() {
                         <td className="p-2">
                           {r.cliente_nombre}
                         </td>
-                        <td className="p-2">{r.fecha_recepcion}</td>
+                        <td className="p-2">{formatearFecha(r.fecha_recepcion)}</td>
                         <td className="p-2">{r.cantidad_piezas}</td>
                         <td className="p-2">
                           <ProtectedComponent componenteId={12}>

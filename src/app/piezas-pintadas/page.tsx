@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import ProtectedPage from "@/components/ProtectedPage";
 import ProtectedComponent from "@/components/ProtectedComponent";
+import { formatearFecha } from "@/lib/utils";
 
 type Pieza = {
   id_pieza: number;
@@ -546,7 +547,7 @@ function PiezasPintadasPage() {
 
                           return visibles.map((l) => (
                             <tr key={l.id_pieza_pintada} className="border-b">
-                              <td className="py-1">{l.fecha}</td>
+                              <td className="py-1">{formatearFecha(l.fecha)}</td>
                               <td className="py-1">{l.pieza_detalle}</td>
                               <td className="py-1">{(l as any).cliente_nombre || "-"}</td>
                               <td className="py-1">
