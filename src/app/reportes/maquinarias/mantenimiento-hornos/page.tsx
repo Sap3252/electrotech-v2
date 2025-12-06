@@ -345,7 +345,7 @@ function MantenimientoHornosContent() {
 
       <div className="mt-6">
         <Button variant="outline" onClick={() => router.push("/reportes/maquinarias")}>
-          ← Volver a Reportes de Maquinarias
+          Volver a Reportes de Maquinarias
         </Button>
       </div>
     </div>

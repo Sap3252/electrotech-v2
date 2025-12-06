@@ -6,7 +6,7 @@ export async function GET() {
   const session = await getSession();
 
   // Verificar acceso al componente Pintura Más Utilizada (ID 19)
-  if (!session || !(await hasPermission(session, 19))) {
+  if (!session || !(await hasPermission(session, 117))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

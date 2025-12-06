@@ -113,7 +113,7 @@ function ReporteVentasClienteEspecifico() {
         <div className="mt-6">
           <Button
             variant="outline"
-            onClick={() => router.push("/reportes")}
+            onClick={() => router.push("/reportes/ventas")}
           >
             Volver a Reportes
           </Button>
@@ -124,7 +124,7 @@ function ReporteVentasClienteEspecifico() {
 
 export default function ReporteVentasClienteEspecificoProtected() {
   return (
-    <ProtectedPage ruta="/reportes/ventas-cliente-especifico">
+    <ProtectedPage ruta="/reportes/ventas/ventas-cliente-especifico">
       <ReporteVentasClienteEspecifico />
     </ProtectedPage>
   );

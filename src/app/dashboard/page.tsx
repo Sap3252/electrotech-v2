@@ -138,7 +138,7 @@ export default function Dashboard() {
 
                 <Button
                   className="bg-black text-white hover:bg-black/80"
-                  onClick={() => router.push("/reportes")}
+                  onClick={() => router.push("/reportes/ventas")}
                 >
                   Reportes
                 </Button>

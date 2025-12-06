@@ -7,7 +7,7 @@ export async function GET() {
   const session = await getSession();
 
   // Verificar acceso al componente Evolucion de Ventas (ID 21)
-  if (!session || !(await hasPermission(session, 21))) {
+  if (!session || !(await hasPermission(session, 119))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

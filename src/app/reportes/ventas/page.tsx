@@ -25,7 +25,7 @@ function ReportesPageContent() {
               </p>
               <Button
                 className="bg-black text-white hover:bg-black/80 w-full"
-                onClick={() => router.push("/reportes/clientes")}
+                onClick={() => router.push("/reportes/ventas/clientes")}
               >
                 Ver Reporte
               </Button>
@@ -43,7 +43,7 @@ function ReportesPageContent() {
               </p>
               <Button
                 className="bg-black text-white hover:bg-black/80 w-full"
-                onClick={() => router.push("/reportes/pintura-mas-utilizada")}
+                onClick={() => router.push("/reportes/ventas/pintura-mas-utilizada")}
               >
                 Ver Reporte
               </Button>
@@ -61,7 +61,7 @@ function ReportesPageContent() {
               </p>
               <Button
                 className="bg-black text-white hover:bg-black/80 w-full"
-                onClick={() => router.push("/reportes/ventas-por-cliente")}
+                onClick={() => router.push("/reportes/ventas/ventas-por-cliente")}
               >
                 Ver Reporte
               </Button>
@@ -79,7 +79,7 @@ function ReportesPageContent() {
               </p>
               <Button
                 className="bg-black text-white hover:bg-black/80 w-full"
-                onClick={() => router.push("/reportes/ventas-cliente-especifico")}
+                onClick={() => router.push("/reportes/ventas/ventas-cliente-especifico")}
               >
                 Ver Reporte
               </Button>
@@ -97,7 +97,7 @@ function ReportesPageContent() {
               </p>
               <Button
                 className="bg-black text-white hover:bg-black/80 w-full"
-                onClick={() => router.push("/reportes/pintura-por-mes")}
+                onClick={() => router.push("/reportes/ventas/pintura-por-mes")}
               >
                 Ver Reporte
               </Button>
@@ -115,7 +115,7 @@ function ReportesPageContent() {
               </p>
               <Button
                 className="bg-black text-white hover:bg-black/80 w-full"
-                onClick={() => router.push("/reportes/evolucion-ventas")}
+                onClick={() => router.push("/reportes/ventas/evolucion-ventas")}
               >
                 Ver Reporte
               </Button>
@@ -125,6 +125,11 @@ function ReportesPageContent() {
         </div>
 
         <div className="mt-6">
+          <Button 
+            variant="outline" 
+            onClick={() => router.push("/reportes/maquinarias")}>
+            Ir a Reportes de Maquinarias
+        </Button>
           <Button
             variant="outline"
             onClick={() => router.push("/dashboard")}
@@ -138,7 +143,7 @@ function ReportesPageContent() {
 
 export default function ReportesPage() {
   return (
-    <ProtectedPage ruta="/reportes">
+    <ProtectedPage ruta="/reportes/ventas">
       <ReportesPageContent />
     </ProtectedPage>
   );

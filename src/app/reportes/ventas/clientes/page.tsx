@@ -2,24 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ProtectedPage from "@/components/ProtectedPage";
 
-type VentasData = {
-  id_cliente: number;
-  nombre: string;
-  total_comprado: string;
+type ClienteData = {
+  cliente: string;
+  piezas_totales: number;
+  porcentaje: number;
 };
 
-function ReporteVentasPorCliente() {
+function ReporteClienteTrabajo() {
   const router = useRouter();
-  const [data, setData] = useState<VentasData[]>([]);
+  const [data, setData] = useState<ClienteData[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/reportes/ventas-por-cliente")
+    fetch("/api/reportes/clientes/piezas")
       .then((res) => {
         if (!res.ok) {
           throw new Error("No tienes permisos para ver este reporte");
@@ -28,9 +28,12 @@ function ReporteVentasPorCliente() {
       })
       .then((res) => {
         if (Array.isArray(res)) {
+          console.log("Datos recibidos:", res);
+          // Convertir strings a números
           const datosConvertidos = res.map(item => ({
-            ...item,
-            total_comprado: Number(item.total_comprado)
+            cliente: item.cliente,
+            piezas_totales: Number(item.piezas_totales),
+            porcentaje: Number(item.porcentaje)
           }));
           setData(datosConvertidos);
         } else {
@@ -40,11 +43,13 @@ function ReporteVentasPorCliente() {
       .catch((err) => setError(err.message));
   }, []);
 
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#845EC2"];
+
   return (
       <div className="min-h-screen bg-slate-100 p-10">
         <Card className="p-6">
           <CardHeader>
-            <CardTitle>Mayores Ventas por Cliente</CardTitle>
+            <CardTitle>Participación de Trabajo por Cliente</CardTitle>
           </CardHeader>
 
           <CardContent>
@@ -54,14 +59,24 @@ function ReporteVentasPorCliente() {
               <p className="text-gray-500">Cargando datos...</p>
             ) : (
               <div className="flex justify-center items-center w-full" style={{ height: "500px" }}>
-                <BarChart width={700} height={400} data={data}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="nombre" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${value}`} />
+                <PieChart width={600} height={500}>
+                  <Pie
+                    data={data}
+                    dataKey="piezas_totales"
+                    nameKey="cliente"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={150}
+                    fill="#8884d8"
+                    label
+                  >
+                    {data.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
                   <Legend />
-                  <Bar dataKey="total_comprado" fill="#8884d8" name="Total Comprado" />
-                </BarChart>
+                </PieChart>
               </div>
             )}
           </CardContent>
@@ -70,7 +85,7 @@ function ReporteVentasPorCliente() {
         <div className="mt-6">
           <Button
             variant="outline"
-            onClick={() => router.push("/reportes")}
+            onClick={() => router.push("/reportes/ventas")}
           >
             Volver a Reportes
           </Button>
@@ -79,10 +94,10 @@ function ReporteVentasPorCliente() {
   );
 }
 
-export default function ReporteVentasPorClienteProtected() {
+export default function ReporteClienteTrabajoProtected() {
   return (
-    <ProtectedPage ruta="/reportes/ventas-por-cliente">
-      <ReporteVentasPorCliente />
+    <ProtectedPage ruta="/reportes/ventas/clientes">
+      <ReporteClienteTrabajo />
     </ProtectedPage>
   );
 }

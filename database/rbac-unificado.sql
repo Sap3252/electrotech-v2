@@ -56,9 +56,15 @@ INSERT INTO Formulario (id_formulario, id_modulo, nombre, ruta, orden) VALUES
 (7, 2, 'Clientes', '/clientes', 3)
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), ruta=VALUES(ruta);
 
--- Módulo 3: Reportes (simplificado - todos en /reportes)
+-- Módulo 3: Reportes de Ventas
 INSERT INTO Formulario (id_formulario, id_modulo, nombre, ruta, orden) VALUES
-(15, 3, 'Reportes Principal', '/reportes', 0)
+(15, 3, 'Reportes Ventas Principal', '/reportes/ventas', 1),
+(28, 3, 'Participación Clientes', '/reportes/ventas/clientes', 2),
+(29, 3, 'Pintura Más Utilizada', '/reportes/ventas/pintura-mas-utilizada', 3),
+(30, 3, 'Ventas por Cliente', '/reportes/ventas/ventas-por-cliente', 4),
+(31, 3, 'Evolución de Ventas', '/reportes/ventas/evolucion-ventas', 5),
+(32, 3, 'Consumo Pintura por Mes', '/reportes/ventas/pintura-por-mes', 6),
+(33, 3, 'Ventas Cliente Específico', '/reportes/ventas/ventas-cliente-especifico', 7)
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), ruta=VALUES(ruta);
 
 -- Módulo 4: Administración
@@ -133,18 +139,22 @@ INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), tipo=VALUES(tipo);
 
 -- ==========================================
--- COMPONENTES - MÓDULO 3: REPORTES
+-- COMPONENTES - MÓDULO 3: REPORTES VENTAS
 -- ==========================================
 
--- Reportes Principal (id_formulario=15) - Todos los reportes como hijos
+-- Reportes Ventas Principal (id_formulario=15)
 INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
-(29, 15, 'Página Principal Reportes', 'acceso'),
-(18, 15, 'Acceso Participación Clientes', 'acceso'),
-(19, 15, 'Acceso Pintura Más Utilizada', 'acceso'),
-(20, 15, 'Acceso Ventas por Cliente', 'acceso'),
-(21, 15, 'Acceso Evolución de Ventas', 'acceso'),
-(22, 15, 'Acceso Consumo Pintura por Mes', 'acceso'),
-(27, 15, 'Acceso Ventas Cliente Específico', 'acceso')
+(115, 15, 'Página Principal Reportes Ventas', 'acceso')
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), tipo=VALUES(tipo);
+
+-- Reportes individuales
+INSERT INTO Componente (id_componente, id_formulario, nombre, tipo) VALUES
+(116, 28, 'Acceso Participación Clientes', 'acceso'),
+(117, 29, 'Acceso Pintura Más Utilizada', 'acceso'),
+(118, 30, 'Acceso Ventas por Cliente', 'acceso'),
+(119, 31, 'Acceso Evolución de Ventas', 'acceso'),
+(120, 32, 'Acceso Consumo Pintura por Mes', 'acceso'),
+(121, 33, 'Acceso Ventas Cliente Específico', 'acceso')
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), id_formulario=VALUES(id_formulario), tipo=VALUES(tipo);
 
 -- ==========================================

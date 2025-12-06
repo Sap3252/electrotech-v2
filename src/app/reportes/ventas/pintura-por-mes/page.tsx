@@ -110,7 +110,7 @@ function ReportePinturaPorMes() {
         <div className="mt-6">
           <Button
             variant="outline"
-            onClick={() => router.push("/reportes")}
+            onClick={() => router.push("/reportes/ventas")}
           >
             Volver a Reportes
           </Button>
@@ -121,7 +121,7 @@ function ReportePinturaPorMes() {
 
 export default function ReportePinturaPorMesProtected() {
   return (
-    <ProtectedPage ruta="/reportes/pintura-por-mes">
+    <ProtectedPage ruta="/reportes/ventas/pintura-por-mes">
       <ReportePinturaPorMes />
     </ProtectedPage>
   );
