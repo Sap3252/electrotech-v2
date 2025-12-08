@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 export default function ResetPasswordPage() {
@@ -42,8 +42,7 @@ export default function ResetPasswordPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <Label>Nueva contraseña</Label>
-              <Input
-                type="password"
+              <PasswordInput
                 required
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1"

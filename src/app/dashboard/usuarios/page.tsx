@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -255,9 +256,8 @@ export default function UsuariosPage() {
                 <Label htmlFor="password">
                   Contraseña {editando ? "(dejar vacío para mantener)" : "*"}
                 </Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={editando ? "Dejar vacío para no cambiar" : ""}

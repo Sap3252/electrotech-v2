@@ -1,5 +1,6 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -18,6 +19,15 @@ export class InputField extends LoginComponent {
   }
 
   render() {
+    if (this.type === "password") {
+      return (
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={this.name}>{this.label}</Label>
+          <PasswordInput id={this.name} name={this.name} />
+        </div>
+      );
+    }
+    
     return (
       <div className="flex flex-col gap-1">
         <Label htmlFor={this.name}>{this.label}</Label>
