@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import ProtectedPage from "@/components/ProtectedPage";
+import { formatearFecha } from "@/lib/utils";
 
 type FacturaData = {
   id_factura: number;
@@ -99,7 +100,7 @@ function ReporteVentasClienteEspecifico() {
                     {data.map((f) => (
                       <tr key={f.id_factura} className="border-b">
                         <td className="p-2">{f.id_factura}</td>
-                        <td className="p-2">{new Date(f.fecha).toLocaleDateString()}</td>
+                        <td className="p-2">{formatearFecha(f.fecha)}</td>
                         <td className="p-2">${Number(f.total).toFixed(2)}</td>
                       </tr>
                     ))}
@@ -113,7 +114,7 @@ function ReporteVentasClienteEspecifico() {
         <div className="mt-6">
           <Button
             variant="outline"
-            onClick={() => router.push("/reportes")}
+            onClick={() => router.push("/reportes/ventas")}
           >
             Volver a Reportes
           </Button>
@@ -124,7 +125,7 @@ function ReporteVentasClienteEspecifico() {
 
 export default function ReporteVentasClienteEspecificoProtected() {
   return (
-    <ProtectedPage ruta="/reportes/ventas-cliente-especifico">
+    <ProtectedPage ruta="/reportes/ventas/ventas-cliente-especifico">
       <ReporteVentasClienteEspecifico />
     </ProtectedPage>
   );

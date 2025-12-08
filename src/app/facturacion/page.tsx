@@ -16,6 +16,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { ModalDetalleFactura } from "@/components/facturas/ModalDetalleFactura";
+import { formatearFecha } from "@/lib/utils";
 
 interface Cliente {
   id_cliente: number;
@@ -395,7 +396,7 @@ function FacturacionPage() {
                       <tr key={f.id_factura} className="border-b">
                         <td className="p-2">{f.id_factura}</td>
                         <td className="p-2">{f.cliente_nombre}</td>
-                        <td className="p-2">{f.fecha}</td>
+                        <td className="p-2">{formatearFecha(f.fecha)}</td>
                         <td className="p-2">${f.total}</td>
                         <td className="p-2">
                           <ProtectedComponent componenteId={16}>

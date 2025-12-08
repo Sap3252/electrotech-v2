@@ -146,10 +146,10 @@ const JERARQUIA_FACTURACION: { nombre: string; nivel: number }[] = [
   { nombre: "Botón Imprimir Factura", nivel: 1 },
 ];
 
-// Reportes Generales
-const JERARQUIA_REPORTES_GENERALES: { nombre: string; nivel: number }[] = [
-  { nombre: "Pagina Principal Reportes", nivel: 0 },
-  { nombre: "Página Principal Reportes", nivel: 0 },
+// Reportes de Ventas
+const JERARQUIA_REPORTES_VENTAS: { nombre: string; nivel: number }[] = [
+  { nombre: "Página Principal Reportes Ventas", nivel: 0 },
+  { nombre: "Pagina Principal Reportes Ventas", nivel: 0 },
   { nombre: "Acceso Participacion Clientes", nivel: 1 },
   { nombre: "Acceso Participación Clientes", nivel: 1 },
   { nombre: "Acceso Pintura Mas Utilizada", nivel: 1 },
@@ -177,7 +177,8 @@ const getJerarquiaParaFormulario = (formulario: string): { nombre: string; nivel
   if (formLower.includes("piezas pintadas")) return JERARQUIA_PIEZAS_PINTADAS;
   if (formLower.includes("remito")) return JERARQUIA_REMITOS;
   if (formLower.includes("facturacion") || formLower.includes("facturación")) return JERARQUIA_FACTURACION;
-  if (formLower.includes("reporte")) return JERARQUIA_REPORTES_GENERALES;
+  if (formLower.includes("reportes ventas") || formLower.includes("ventas")) return JERARQUIA_REPORTES_VENTAS;
+  if (formLower.includes("reporte")) return JERARQUIA_REPORTES_VENTAS;
   
   return [];
 };
@@ -295,6 +296,37 @@ export default function EditarPermisosGrupo({
 
       // Si es un reporte hijo y estamos desactivando, solo desactivar ese
       if (objetivo.ruta?.startsWith("/reportes/maquinarias/") && !nuevoAsignado) {
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: false } : c));
+      }
+
+      // CASO ESPECIAL: Si es "Página Principal Reportes Ventas" (el padre de todos los reportes de ventas)
+      if (objetivo.nombre === "Página Principal Reportes Ventas" || objetivo.nombre === "Pagina Principal Reportes Ventas") {
+        if (!nuevoAsignado) {
+          // Desactivar TODOS los reportes de ventas (hijos)
+          return prev.map((c) => {
+            if (c.id_componente === idComponente) return { ...c, asignado: false };
+            // Desactivar todos los componentes que son reportes de ventas
+            if (c.ruta?.startsWith("/reportes/ventas/")) return { ...c, asignado: false };
+            return c;
+          });
+        }
+        // Si estamos activando, solo activar el padre
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
+      }
+
+      // CASO ESPECIAL: Si es un reporte hijo de ventas, verificar que el padre esté activo
+      if (objetivo.ruta?.startsWith("/reportes/ventas/") && nuevoAsignado) {
+        const padre = prev.find((c) => 
+          c.nombre === "Página Principal Reportes Ventas" || c.nombre === "Pagina Principal Reportes Ventas"
+        );
+        if (padre && !padre.asignado) {
+          return prev; // no permitir si el padre no está activo
+        }
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
+      }
+
+      // Si es un reporte hijo de ventas y estamos desactivando, solo desactivar ese
+      if (objetivo.ruta?.startsWith("/reportes/ventas/") && !nuevoAsignado) {
         return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: false } : c));
       }
 
@@ -576,6 +608,40 @@ export default function EditarPermisosGrupo({
                               comp={comp}
                               formulario="reportes maquinarias"
                               comps={todosReportes}
+                              idx={idx}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Agrupar los reportes de ventas en una sola sección
+                  const esReporteVentas = modulo === "Reportes" && 
+                    (formulario.includes("Ventas") || formulario.includes("Participación") || 
+                     formulario.includes("Pintura") || formulario.includes("Evolución") || 
+                     formulario.includes("Consumo"));
+                  
+                  if (esReporteVentas && formulario !== "Reportes Ventas Principal") {
+                    return null; // Se renderizará con el formulario principal
+                  }
+
+                  // Si es el formulario principal de reportes ventas, agrupar todos
+                  if (formulario === "Reportes Ventas Principal") {
+                    const todosReportesVentas = componentes.filter(c => 
+                      c.modulo === "Reportes"
+                    );
+                    
+                    return (
+                      <div key={formulario} className="ml-4 mb-4">
+                        <h4 className="font-semibold text-md mb-3">Reportes de Ventas</h4>
+                        <div>
+                          {ordenarPorJerarquia(todosReportesVentas, "reportes ventas").map((comp, idx) => (
+                            <TreeItem 
+                              key={comp.id_componente}
+                              comp={comp}
+                              formulario="reportes ventas"
+                              comps={todosReportesVentas}
                               idx={idx}
                             />
                           ))}

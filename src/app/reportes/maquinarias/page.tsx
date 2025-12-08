@@ -67,11 +67,11 @@ function ReportesMaquinariasContent() {
       </div>
 
       <div className="mt-6 flex gap-3">
-        <Button variant="outline" onClick={() => router.push("/reportes")}>
-          Volver a Reportes
+        <Button variant="outline" onClick={() => router.push("/reportes/ventas")}>
+          Ir a Reportes
         </Button>
         <Button variant="outline" onClick={() => router.push("/dashboard")}>
-          Ir al Dashboard
+          Volver al Dashboard
         </Button>
       </div>
     </div>

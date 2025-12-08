@@ -58,10 +58,16 @@ mysql -u root -p electrotech2 < database/data-empleados.sql
 | 6 | `/facturacion` | Facturación |
 | 7 | `/clientes` | Clientes |
 
-#### Módulo 3: Reportes
+#### Módulo 3: Reportes de Ventas
 | ID | Ruta | Descripción |
 |----|------|-------------|
-| 15 | `/reportes` | Reportes Principal (padre de todos) |
+| 15 | `/reportes/ventas` | Reportes Ventas Principal |
+| 28 | `/reportes/ventas/clientes` | Participación Clientes |
+| 29 | `/reportes/ventas/pintura-mas-utilizada` | Pintura Más Utilizada |
+| 30 | `/reportes/ventas/ventas-por-cliente` | Ventas por Cliente |
+| 31 | `/reportes/ventas/evolucion-ventas` | Evolución de Ventas |
+| 32 | `/reportes/ventas/pintura-por-mes` | Consumo Pintura por Mes |
+| 33 | `/reportes/ventas/ventas-cliente-especifico` | Ventas Cliente Específico |
 
 #### Módulo 4: Administración
 | ID | Ruta | Descripción |
@@ -93,7 +99,7 @@ mysql -u root -p electrotech2 < database/data-empleados.sql
 |-------|--------|
 | 1-9 | Piezas y Pinturas |
 | 10-17 | Facturación |
-| 18-29 | Reportes |
+| 115-121 | Reportes Ventas |
 | 70-76 | Empleados - Gestión |
 | 77-80 | Empleados - Asistencia |
 | 81-85 | Empleados - Recibos Empleado |

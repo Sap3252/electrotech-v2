@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const session = await getSession();
 
   // Verificar acceso al componente Ventas Cliente Especifico (ID 27 crear)
-  if (!session || !(await hasPermission(session, 27))) {
+  if (!session || !(await hasPermission(session, 121))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

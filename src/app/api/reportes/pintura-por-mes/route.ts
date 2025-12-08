@@ -6,7 +6,7 @@ export async function GET() {
   const session = await getSession();
 
   // Verificar acceso al componente Consumo Pintura por Mes (ID 22)
-  if (!session || !(await hasPermission(session, 22))) {
+  if (!session || !(await hasPermission(session, 120))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
