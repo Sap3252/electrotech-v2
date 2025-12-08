@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ElectroTech
 
-## Getting Started
+Sistema integral de gestión para empresas de electrodomésticos, especializado en la administración de producción, facturación, inventario y reportes.
 
-First, run the development server:
+## Descripción del Proyecto
 
+ElectroTech es una aplicación web full-stack desarrollada con Next.js que proporciona herramientas completas para gestionar:
+
+- Producción de piezas y pinturas
+- Catálogo de productos (maquinarias, marcas, tipos)
+- Control de inventario y stock
+- Facturación y remitos
+- Gestión de clientes, empleados y proveedores
+- Sistema de reportes y análisis de ventas
+- Control de acceso basado en roles (RBAC)
+
+## Características Principales
+
+- Autenticación y autorización con JWT
+- Sistema RBAC (Role-Based Access Control) completo
+- Interfaz responsiva con Tailwind CSS y componentes Radix UI
+- API REST con rutas dinámicas
+- Generación de reportes en PDF
+- Cálculo automático de consumo de pintura
+- Auditoría de sesiones de usuario
+- Gestión de permisos granulares por grupo
+
+## Tecnologías Utilizadas
+
+### Frontend
+- Next.js 16.0.3
+- React 19.2.0
+- TypeScript
+- Tailwind CSS
+- shadcn/ui (componentes UI construidos sobre Radix UI)
+- Recharts (gráficos)
+
+### Backend
+- Next.js API Routes
+- MySQL 2
+- JWT (jsonwebtoken)
+- Bcryptjs (encriptación)
+- Nodemailer (correos)
+- jsPDF (generación de PDFs)
+
+### Herramientas de Desarrollo
+- ESLint
+- Babel React Compiler
+- PostCSS
+
+## Estructura del Proyecto
+├── src/
+│ ├── app/ # Next.js app directory
+│ │ ├── api/ # Rutas API
+│ │ ├── dashboard/ # Dashboards por rol
+│ │ ├── auth/ # Páginas de autenticación
+│ │ └── [features]/ # Módulos funcionales
+│ ├── components/ # Componentes React reutilizables
+│ │ ├── ui/ # Componentes shadcn/ui
+│ │ └── [features]/ # Componentes de features específicas
+│ ├── domain/ # Lógica de negocio y patrones
+│ ├── lib/ # Utilidades y funciones auxiliares
+│ └── middleware.ts # Middleware de autenticación
+├── database/ # Scripts SQL y esquemas
+├── public/ # Archivos estáticos
+└── components.json # Configuración de shadcn/ui
+
+## Módulos Principales
+
+### Piezas y Pinturas
+Gestión de piezas, pinturas y piezas pintadas con cálculo automático de consumo según densidad.
+
+### Facturación
+Sistema completo de creación y seguimiento de facturas y remitos.
+
+### Productos
+Administración de marcas, tipos y colores.
+
+### Reportes
+Análisis de ventas, consumo de pintura y evolución por cliente.
+
+### Administración
+Gestión de usuarios, grupos y permisos del sistema.
+
+## Requisitos Previos
+
+- Node.js 18+
+- npm o yarn
+- MySQL 8.0+
+
+## Instalación
+
+1. Clonar el repositorio:
 ```bash
+git clone https://github.com/Sap3252/electrotech.git
+cd electrotech
+
+2. Instalar dependencias:
+npm install
+
+3. Configurar variables de entorno (.env.local):
+DATABASE_URL=mysql://usuario:password@localhost:3306/electrotech
+JWT_SECRET=tu_secret_jwt
+MAIL_USER=tu_email@gmail.com
+MAIL_PASSWORD=tu_password
+
+4. Configurar base de datos:
+mysql -u usuario -p electrotech < database/rbac-completo.sql
+
+5. Iniciar servidor de desarrollo:
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La aplicación estará disponible en http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sistema RBAC
+El sistema utiliza control de acceso basado en roles con:
 
-## Learn More
+4 módulos principales
+15 formularios
+24 componentes
+Permisos granulares por grupo
+Vistas de auditoría
+Ver README.md para documentación detallada del RBAC.
 
-To learn more about Next.js, take a look at the following resources:
+Patrones de Diseño
+Strategy Pattern: Cálculo de consumo de pintura
+Composite Pattern: RBAC y login
+Protected Routes: Componentes y páginas protegidas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Base de Datos
+El proyecto incluye dos scripts SQL principales:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+electrotech-schema.sql - Esquema base
+rbac-completo.sql - Sistema RBAC completo y listo para usar
 
-## Deploy on Vercel
+Contribución
+Las contribuciones son bienvenidas. Por favor:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Fork el proyecto
+Crea una rama para tu feature (git checkout -b feature/AmazingFeature)
+Commit tus cambios (git commit -m 'Add AmazingFeature')
+Push a la rama (git push origin feature/AmazingFeature)
+Abre un Pull Request
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Licencia
+Este proyecto está licenciado bajo la Licencia MIT.
+
+Autores
+Santiago Passerini y Ignacio Criscenti
+
+Contacto
+Para preguntas o soporte, abre un issue en el repositorio.
