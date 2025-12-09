@@ -2,7 +2,6 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export abstract class LoginComponent {
   abstract render(): React.JSX.Element;
@@ -38,25 +37,6 @@ export class InputField extends LoginComponent {
 
   validate(values: Record<string, string>): string[] {
     if (!values[this.name]) return [`${this.label} es obligatorio`];
-    return [];
-  }
-}
-
-export class CheckboxField extends LoginComponent {
-  constructor(private name: string, private label: string) {
-    super();
-  }
-
-  render() {
-    return (
-      <div className="flex items-center gap-2">
-        <Checkbox id={this.name} name={this.name} />
-        <Label htmlFor={this.name} className="text-xs">{this.label}</Label>
-      </div>
-    );
-  }
-
-  validate(): string[] {
     return [];
   }
 }

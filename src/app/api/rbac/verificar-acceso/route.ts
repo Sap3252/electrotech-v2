@@ -6,7 +6,6 @@ export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session) {
-      console.log("[verificar-acceso] Sin sesión - redirigiendo a login");
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 

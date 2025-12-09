@@ -24,13 +24,9 @@ export async function POST(req: Request) {
     const userId = decoded.id_usuario;
 
     if (!userId) {
-      console.error("No userId found in token:", decoded);
       return NextResponse.json({ error: "Invalid token structure" }, { status: 400 });
     }
 
-    console.log("Logging out user:", userId);
-
-    // guardar logout en auditoria
     await pool.execute(
       `
       UPDATE AuditoriaSesion

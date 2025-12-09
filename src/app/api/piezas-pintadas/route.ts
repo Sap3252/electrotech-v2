@@ -105,7 +105,6 @@ export async function POST(req: Request) {
     if (lastFecha && lastFecha !== hoy) {
       await pool.query(`UPDATE cabina SET piezas_hoy = 0 WHERE id_cabina = ?`, [id_cabina]);
       cabinaData.piezas_hoy = 0;
-      console.log(`[Reset Automático] Cabina "${cabinaData.nombre}" reseteada. Último uso: ${lastFecha}, Hoy: ${hoy}`);
     }
     
     if (cabinaData.estado !== 'activa') {
@@ -235,7 +234,6 @@ export async function POST(req: Request) {
         await conn.rollback();
         conn.release();
         
-        console.log(`[Duplicado Detectado] Registro reciente encontrado en transacción`);
         return NextResponse.json({ 
           ok: true, 
           duplicado: true,

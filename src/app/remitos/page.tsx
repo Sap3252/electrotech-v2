@@ -55,9 +55,7 @@ function RemitosPage() {
     const [cantidad, setCantidad] = useState("");
     const [erroresDetalle, setErroresDetalle] = useState<{ [key: string]: string }>({});
     const [erroresForm, setErroresForm] = useState<{ [key: string]: string }>({});
-  //================
-  //CARGAS INICIALES
-  //================
+
   const cargarClientes = async () => {
     const res = await fetch("/api/clientes");
     if (res.ok) setClientes(await res.json());
@@ -90,9 +88,6 @@ function RemitosPage() {
     fetchData();
   }, []);
 
-  // =============
-  //GUARDAR REMITO
-  // =============
   const guardarRemito = async () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -100,12 +95,9 @@ function RemitosPage() {
     if (!form.fecha_recepcion) newErrors.fecha = "Debe ingresar una fecha.";
     if (detalle.length === 0) newErrors.detalle = "Debe agregar al menos una pieza.";
 
-    // Validar que la fecha no exceda la fecha actual
     if (form.fecha_recepcion) {
       const fechaIngresada = new Date(form.fecha_recepcion);
       const fechaActual = new Date();
-      // Comparar solo la fecha (ignorar horas/minutos)
-      fechaIngresada.setHours(0, 0, 0, 0);
       fechaActual.setHours(0, 0, 0, 0);
       if (fechaIngresada > fechaActual) {
         newErrors.fecha = "La fecha no puede ser mayor a la fecha actual.";
@@ -141,9 +133,6 @@ function RemitosPage() {
     }
   };
 
-  //=======================
-  //VER DETALLE DEL REMITO
-  //========================
   const verDetalle = (id: number) => {
     setSelectedRemito(id);
     setOpenModal(true);
@@ -173,7 +162,6 @@ function RemitosPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* Cliente */}
               <div>
                 <Label>Cliente</Label>
                 <Combobox
@@ -197,7 +185,6 @@ function RemitosPage() {
                 )}
               </div>
 
-              {/* Fecha */}
               <div>
                 <Label>Fecha de recepción</Label>
                 <Input
@@ -220,12 +207,10 @@ function RemitosPage() {
 
             <hr className="my-6" />
 
-            {/* PIEZAS DEL DETALLE */}
             <h3 className="text-lg font-semibold mb-3">Agregar piezas</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-              {/* Seleccionar pieza */}
               <Combobox
                 value={piezaSeleccionada}
                 onValueChange={(v) => setPiezaSeleccionada(v)}
@@ -239,7 +224,6 @@ function RemitosPage() {
                 emptyText="No se encontraron piezas"
               />
 
-              {/* Cantidad */}
               <Input
                 type="number"
                 placeholder="Cantidad"
@@ -288,7 +272,6 @@ function RemitosPage() {
                 </Button>
             </div>
 
-            {/* Lista */}
             {detalle.length > 0 && (
               <div className="mt-4 bg-slate-50 p-4 rounded border">
                 <h4 className="font-semibold mb-2">Detalle cargado:</h4>

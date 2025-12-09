@@ -28,8 +28,6 @@ function ReporteClienteTrabajo() {
       })
       .then((res) => {
         if (Array.isArray(res)) {
-          console.log("Datos recibidos:", res);
-          // Convertir strings a números
           const datosConvertidos = res.map(item => ({
             cliente: item.cliente,
             piezas_totales: Number(item.piezas_totales),

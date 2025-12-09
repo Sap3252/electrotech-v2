@@ -34,7 +34,6 @@ export async function GET(
   }
 }
 
-// PUT: Actualizar pistola
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -71,7 +70,6 @@ export async function PUT(
   }
 }
 
-// DELETE: Eliminar pistola
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -21,9 +21,6 @@ export interface RBACComponent {
   getTipo(): 'modulo' | 'formulario' | 'componente';
 }
 
-// ============================================
-// HOJA: Componente (nivel más bajo)
-// ============================================
 export class ComponenteLeaf implements RBACComponent {
   constructor(
     private id_componente: number,
@@ -75,9 +72,6 @@ export class ComponenteLeaf implements RBACComponent {
   }
 }
 
-// ============================================
-// COMPOSITE: Formulario (contiene Componentes)
-// ============================================
 export class FormularioComposite implements RBACComponent {
   private componentes: ComponenteLeaf[] = [];
 
@@ -139,9 +133,6 @@ export class FormularioComposite implements RBACComponent {
   }
 }
 
-// ============================================
-// COMPOSITE: Módulo (contiene Formularios)
-// ============================================
 export class ModuloComposite implements RBACComponent {
   private formularios: FormularioComposite[] = [];
 
@@ -307,19 +298,11 @@ export class RBACCompositeBuilder {
       for (const formulario of modulo.getChildren() as FormularioComposite[]) {
         if (formulario.getRuta() === ruta) {
           const tieneAcceso = formulario.tieneAcceso(gruposUsuario);
-          console.log(`[RBAC] Ruta '${ruta}' encontrada en formulario '${formulario.getNombre()}'. Grupos usuario: [${gruposUsuario.join(',')}]. Acceso: ${tieneAcceso}`);
-          
-          // Debug: mostrar componentes y sus grupos
-          for (const comp of formulario.getChildren() as ComponenteLeaf[]) {
-            console.log(`  - Componente '${comp.getNombre()}': grupos con acceso [${comp.getGruposConAcceso().join(',')}], activo: ${comp.isActivo()}`);
-          }
-          
           if (tieneAcceso) return true;
         }
       }
     }
     
-    console.log(`[RBAC] Ruta '${ruta}' NO encontrada o sin acceso para grupos [${gruposUsuario.join(',')}]`);
     return false;
   }
 

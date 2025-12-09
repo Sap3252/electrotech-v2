@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -83,7 +82,6 @@ function PinturasPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // client-side validation
     const newErrors: { [key: string]: string } = {};
     if (!form.id_marca) newErrors.id_marca = "Debe seleccionar una marca.";
     if (!form.id_tipo) newErrors.id_tipo = "Debe seleccionar un tipo de pintura.";

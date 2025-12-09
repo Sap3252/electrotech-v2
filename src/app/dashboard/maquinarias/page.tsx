@@ -124,7 +124,6 @@ function MaquinariasPage() {
     gasto_gas_hora: 5,
   });
 
-  // Cargar datos
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -148,9 +147,6 @@ function MaquinariasPage() {
     }
   };
 
-  // ==========================================
-  // HANDLERS CABINAS
-  // ==========================================
   const handleCrearCabina = async () => {
     try {
       const res = await fetch("/api/cabinas", {

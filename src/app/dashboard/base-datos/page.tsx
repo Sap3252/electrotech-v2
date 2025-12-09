@@ -112,16 +112,13 @@ function PanelBaseDatosContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Modal Nueva Política
   const [modalOpen, setModalOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
-  // Historial
   const [historial, setHistorial] = useState<HistorialBackup[]>([]);
   const [historialLoading, setHistorialLoading] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
 
-  // Formulario
   const [formData, setFormData] = useState({
     nombre: "",
     tipo: "completo" as "completo" | "parcial" | "incremental",

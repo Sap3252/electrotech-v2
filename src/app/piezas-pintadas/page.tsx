@@ -108,7 +108,6 @@ function PiezasPintadasPage() {
   const [mensajeError, setMensajeError] = useState<string>("");
 
 
-  //Cargar combos y tabla
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -140,7 +139,6 @@ function PiezasPintadasPage() {
   }, []);
 
   const registrarLote = async () => {
-    // Prevenir doble submit
     if (loading) return;
     
     if (!idPieza || !idPintura || !idCabina || cantidad <= 0) {
@@ -148,7 +146,6 @@ function PiezasPintadasPage() {
       return;
     }
 
-    //Validar stock disponible
     if (stockInfo && cantidad > stockInfo.stock_disponible) {
       setMensajeError(
         `No podés pintar ${cantidad} piezas. Stock disponible: ${stockInfo.stock_disponible}.`
@@ -156,7 +153,6 @@ function PiezasPintadasPage() {
       return;
     }
 
-    //Validar capacidad de cabina
     if (cabinaInfo && !cabinaInfo.puede_usar) {
       setMensajeError(cabinaInfo.mensaje);
       return;
@@ -239,6 +235,39 @@ function PiezasPintadasPage() {
     }
   };
 
+const eliminarPiezaPintada = async (id: number) => {
+    if (!confirm("¿Estás seguro de eliminar este registro de producción?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/piezas-pintadas/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Error al eliminar el registro");
+        return;
+      }
+
+      alert("Registro eliminado correctamente");
+
+      // Recargar tabla y piezas disponibles
+      const [lotesRes, piezasRes] = await Promise.all([
+        fetch("/api/piezas-pintadas"),
+        fetch("/api/piezas/disponibles"),
+      ]);
+      const lotesData = lotesRes.ok ? await lotesRes.json() : [];
+      const piezasData = piezasRes.ok ? await piezasRes.json() : [];
+      setLotes(Array.isArray(lotesData) ? lotesData : []);
+      setPiezas(Array.isArray(piezasData) ? piezasData : []);
+    } catch (err) {
+      console.error("Error al eliminar:", err);
+      alert("Error al eliminar el registro");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 p-8">
       <div className="flex justify-between items-center mb-6">
@@ -248,7 +277,7 @@ function PiezasPintadasPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex flex-col gap-6">
         {/* FORMULARIO */}
         <ProtectedComponent componenteId={8}>
           <Card>
@@ -256,7 +285,6 @@ function PiezasPintadasPage() {
               <CardTitle>Nueva producción</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-            {/* PIEZA */}
             <div>
               <label className="block text-sm font-medium mb-1">
                 Pieza (cruda)
@@ -515,6 +543,7 @@ function PiezasPintadasPage() {
                       <th className="text-left py-1">Cabina</th>
                       <th className="text-right py-1">Cant.</th>
                       <th className="text-right py-1">Consumo (kg)</th>
+                      <th className="text-right py-1">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -537,6 +566,17 @@ function PiezasPintadasPage() {
                               <td className="py-1 text-right">{l.cantidad}</td>
                               <td className="py-1 text-right">
                                 {l.consumo_estimado_kg} kg
+                              </td>
+                              <td className="py-1 text-right">
+                                <ProtectedComponent componenteId={23}>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => eliminarPiezaPintada(l.id_pieza_pintada)}
+                                  >
+                                    Eliminar
+                                  </Button>
+                                </ProtectedComponent>
                               </td>
                             </tr>
                           ));

@@ -55,7 +55,6 @@ export async function GET(
   }
 }
 
-// PUT: Actualizar cabina
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -137,7 +136,6 @@ export async function PUT(
   }
 }
 
-// DELETE: Eliminar cabina
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

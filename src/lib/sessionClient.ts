@@ -3,9 +3,6 @@
 // Decodificar JWT manualmente (sin verificar firma)
 export async function getSessionClient() {
   const token = getCookie("session");
-  console.log("🔍 getSessionClient - token:", token ? "EXISTE" : "NO EXISTE");
-  console.log("🔍 document.cookie:", document.cookie);
-  
   if (!token) return null;
 
   try {
@@ -16,11 +13,8 @@ export async function getSessionClient() {
     // Decodificar la parte del payload (base64url)
     const payload = parts[1];
     const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    
-    console.log("✅ Session decodificada:", decoded);
     return decoded || null;
-  } catch (error) {
-    console.error("❌ Error decodificando JWT:", error);
+  } catch {
     return null;
   }
 }

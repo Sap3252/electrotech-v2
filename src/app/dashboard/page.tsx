@@ -70,7 +70,6 @@ export default function Dashboard() {
       ]);
 
       const dataBaseDatos = await resBaseDatos.json();
-      console.log("Permisos Base Datos:", dataBaseDatos);
 
       setPermisos({
         panelAdmin: false, // Se determina por grupo Admin

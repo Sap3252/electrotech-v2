@@ -28,7 +28,6 @@ export async function GET() {
   }
 }
 
-// POST: Crear nueva pistola
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

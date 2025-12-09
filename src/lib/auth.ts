@@ -6,9 +6,6 @@ import { RBACCompositeBuilder } from "@/domain/rbacComposite";
 
 const SECRET = process.env.JWT_SECRET!;
 
-// ===========================
-//  CREAR TOKEN
-// ===========================
 export function createToken(payload: { 
   id_usuario: number; 
   email: string;
@@ -19,9 +16,6 @@ export function createToken(payload: {
   return jwt.sign(payload, SECRET, { expiresIn: "8h" });
 }
 
-// ===========================
-//  GUARDAR SESIÓN EN COOKIE
-// ===========================
 export async function setSession(token: string) {
   const cookieStore = await cookies();
   cookieStore.set("session", token, {
@@ -29,21 +23,14 @@ export async function setSession(token: string) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 8, // 8 horas (igual que el token JWT)
+    maxAge: 60 * 60 * 8,
   });
 }
 
-// ===========================
-//  BORRAR SESIÓN
-// ===========================
 export async function clearSession() {
   const cookieStore = await cookies();
   cookieStore.delete("session");
 }
-
-// ===========================
-//  LEER SESIÓN + GRUPOS
-// ===========================
 
 export type SessionData = {
   id_usuario: number;
@@ -59,7 +46,6 @@ export async function getSession(): Promise<SessionData | null> {
   try {
     const decoded = jwt.verify(token, SECRET) as { id_usuario: number };
 
-    // Solo obtener grupos ACTIVOS (id_estado = 1)
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT g.nombre 
        FROM GrupoUsuario gu
@@ -80,26 +66,14 @@ export async function getSession(): Promise<SessionData | null> {
   }
 }
 
-// ===========================
-//  VERIFICAR PERTENENCIA A GRUPO
-// ===========================
-
 export function hasGroup(session: SessionData | null, groupName: string): boolean {
   if (!session) return false;
   return session.grupos.includes(groupName);
 }
 
-// ===========================
-//  VERIFICAR SI ES ADMINISTRADOR
-// ===========================
-
 export function isAdmin(session: SessionData | null): boolean {
   return hasGroup(session, "Admin");
 }
-
-// ===========================
-//  VERIFICAR PERMISO A COMPONENTE (RBAC) - Usa Patrón Composite
-// ===========================
 
 export async function hasPermission(
   session: SessionData | null,
@@ -131,13 +105,11 @@ export async function hasFormularioAccess(
   formularioRuta: string
 ): Promise<boolean> {
   if (!session) {
-    console.log(`[hasFormularioAccess] Sin sesión - Acceso denegado a ${formularioRuta}`);
     return false;
   }
   
   // Admin siempre tiene acceso (solo si está en grupo activo)
   if (isAdmin(session)) {
-    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} es Admin (grupo activo) - Acceso permitido a ${formularioRuta}`);
     return true;
   }
 
@@ -145,10 +117,7 @@ export async function hasFormularioAccess(
     // Obtener IDs de grupos activos del usuario
     const gruposIds = await RBACCompositeBuilder.getGruposActivosUsuario(session.id_usuario);
     
-    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} - Grupos activos: [${gruposIds.join(',')}] - Verificando ruta: ${formularioRuta}`);
-    
     if (gruposIds.length === 0) {
-      console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} no tiene grupos activos - Acceso denegado`);
       return false;
     }
     
@@ -161,8 +130,6 @@ export async function hasFormularioAccess(
       const formularios = await RBACCompositeBuilder.getFormulariosAccesiblesFormatted(gruposIds);
       tieneAcceso = formularios.some((f) => typeof f.ruta === "string" && f.ruta.startsWith(prefix));
     }
-    
-    console.log(`[hasFormularioAccess] Usuario ${session.id_usuario} (${session.grupos.join(',')}) - Ruta: ${formularioRuta} - Acceso: ${tieneAcceso}`);
 
     return tieneAcceso;
   } catch (error) {

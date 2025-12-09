@@ -34,7 +34,6 @@ export async function GET(
   }
 }
 
-// PUT: Actualizar horno
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -73,7 +72,6 @@ export async function PUT(
   }
 }
 
-// DELETE: Eliminar horno
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

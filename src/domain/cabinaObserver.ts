@@ -1,10 +1,3 @@
-// ==========================================
-// MACHINERY OBSERVER V2 - Cabinas, Pistolas, Hornos
-// ==========================================
-// Implementación del patrón Observer para el sistema de maquinaria
-// Monitorea: límites de cabina, mantenimiento de pistolas/hornos, consumo de gas
-
-// Tipos para el nuevo modelo
 export interface Cabina {
   id_cabina: number;
   nombre: string;
@@ -144,10 +137,7 @@ export class LimiteDiarioCabinaObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// OBSERVER: Mantenimiento de Pistolas
-// ==========================================
-export class MantenimientoPistolaObserver implements MachineryObserver {
+export class PistolaMaintenanceObserver implements CabinaObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
     const cabina = event.cabina;
@@ -185,10 +175,7 @@ export class MantenimientoPistolaObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// OBSERVER: Mantenimiento de Hornos
-// ==========================================
-export class MantenimientoHornoObserver implements MachineryObserver {
+export class HornoMaintenanceObserver implements CabinaObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
     const cabina = event.cabina;

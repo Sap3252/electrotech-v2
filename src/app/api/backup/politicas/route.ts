@@ -3,7 +3,6 @@ import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
 import { RowDataPacket, ResultSetHeader } from "mysql2";
 
-// GET: Obtener todas las políticas de backup
 export async function GET() {
   const session = await getSession();
 
@@ -28,7 +27,6 @@ export async function GET() {
   }
 }
 
-// POST: Crear nueva política de backup
 export async function POST(req: NextRequest) {
   const session = await getSession();
 
@@ -56,7 +54,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calcular próxima ejecución
     const proxima_ejecucion = calcularProximaEjecucion(
       frecuencia,
       hora_ejecucion,

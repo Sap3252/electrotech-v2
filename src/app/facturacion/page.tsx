@@ -60,9 +60,6 @@ function FacturacionPage() {
   const [precioUnitario, setPrecioUnitario] = useState(0);
   const [erroresItem, setErroresItem] = useState<{ [key: string]: string }>({});
 
-  // ===============
-  //CARGAS INICIALES
-  // ==============
   const cargarClientes = async () => {
     const res = await fetch("/api/clientes");
     if (res.ok) setClientes(await res.json());

@@ -11,8 +11,6 @@ export async function POST(req: Request) {
   try {
     const { id_grupo, componentes } = await req.json();
 
-    console.log('[asignar-componentes] Recibido:', { id_grupo, componentes });
-
     if (!id_grupo || !Array.isArray(componentes)) {
       return NextResponse.json(
         { error: "id_grupo y componentes son requeridos" },
@@ -31,22 +29,16 @@ export async function POST(req: Request) {
         "DELETE FROM GrupoComponente WHERE id_grupo = ?",
         [id_grupo]
       );
-      console.log(`[asignar-componentes] Eliminados permisos del grupo ${id_grupo}`);
 
-      // Insertar los nuevos permisos
       if (componentes.length > 0) {
         const values = componentes.map((id_componente) => [id_grupo, id_componente]);
         await connection.query(
           "INSERT INTO GrupoComponente (id_grupo, id_componente) VALUES ?",
           [values]
         );
-        console.log(`[asignar-componentes] Insertados ${componentes.length} componentes para grupo ${id_grupo}`);
-      } else {
-        console.log(`[asignar-componentes] No hay componentes para asignar al grupo ${id_grupo}`);
       }
 
       await connection.commit();
-      console.log(`[asignar-componentes] Transacción completada exitosamente`);
       
       return NextResponse.json({ 
         ok: true, 

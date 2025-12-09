@@ -23,9 +23,6 @@ type Grupo = {
   estado: string;
 };
 
-// ========== DEFINICIÓN DE JERARQUÍAS POR MÓDULO (fuera del componente) ==========
-
-// Maquinarias - Gestión de Maquinarias
 const JERARQUIA_GESTION_MAQUINARIAS: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Gestion Maquinarias", nivel: 0 },
   { nombre: "Tab Cabinas", nivel: 1 },
@@ -47,7 +44,6 @@ const JERARQUIA_GESTION_MAQUINARIAS: { nombre: string; nivel: number }[] = [
   { nombre: "Boton Registrar Mantenimiento Horno", nivel: 3 },
 ];
 
-// Maquinarias - Reportes
 const JERARQUIA_REPORTES_MAQUINARIAS: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Reportes Maquinarias", nivel: 0 },
   { nombre: "Acceso Reporte Uso Cabinas", nivel: 1 },
@@ -57,7 +53,6 @@ const JERARQUIA_REPORTES_MAQUINARIAS: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Reporte Consumo Gas", nivel: 1 },
 ];
 
-// Empleados y Nomina - Gestión de Empleados
 const JERARQUIA_GESTION_EMPLEADOS: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Gestion Empleados", nivel: 0 },
   { nombre: "Formulario Nuevo Empleado", nivel: 1 },
@@ -68,7 +63,6 @@ const JERARQUIA_GESTION_EMPLEADOS: { nombre: string; nivel: number }[] = [
   { nombre: "Boton Ver Recibos", nivel: 2 },
 ];
 
-// Empleados y Nomina - Asistencia Empleado
 const JERARQUIA_ASISTENCIA: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Asistencia Empleado", nivel: 0 },
   { nombre: "Calendario Asistencia", nivel: 1 },
@@ -76,7 +70,6 @@ const JERARQUIA_ASISTENCIA: { nombre: string; nivel: number }[] = [
   { nombre: "Formulario Registrar Asistencia", nivel: 1 },
 ];
 
-// Empleados y Nomina - Recibos Empleado
 const JERARQUIA_RECIBOS_EMPLEADO: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Recibos Empleado", nivel: 0 },
   { nombre: "Tabla Historial Recibos", nivel: 1 },
@@ -85,7 +78,6 @@ const JERARQUIA_RECIBOS_EMPLEADO: { nombre: string; nivel: number }[] = [
   { nombre: "Boton Descargar PDF", nivel: 2 },
 ];
 
-// Empleados y Nomina - Gestión de Recibos (global)
 const JERARQUIA_GESTION_RECIBOS: { nombre: string; nivel: number }[] = [
   { nombre: "Acceso Gestion Recibos", nivel: 0 },
   { nombre: "Tabla Todos los Recibos", nivel: 1 },
@@ -93,7 +85,6 @@ const JERARQUIA_GESTION_RECIBOS: { nombre: string; nivel: number }[] = [
   { nombre: "Boton Ver Recibo Individual", nivel: 2 },
 ];
 
-// Piezas y Pinturas - Gestión de Piezas
 const JERARQUIA_GESTION_PIEZAS: { nombre: string; nivel: number }[] = [
   { nombre: "Formulario Nueva Pieza", nivel: 0 },
   { nombre: "Tabla Listado Piezas", nivel: 0 },
@@ -103,7 +94,6 @@ const JERARQUIA_GESTION_PIEZAS: { nombre: string; nivel: number }[] = [
   { nombre: "Botón Eliminar Pieza", nivel: 1 },
 ];
 
-// Piezas y Pinturas - Gestión de Pinturas
 const JERARQUIA_GESTION_PINTURAS: { nombre: string; nivel: number }[] = [
   { nombre: "Formulario Nueva Pintura", nivel: 0 },
   { nombre: "Tabla Listado Pinturas", nivel: 0 },
@@ -113,7 +103,6 @@ const JERARQUIA_GESTION_PINTURAS: { nombre: string; nivel: number }[] = [
   { nombre: "Botón Eliminar Pintura", nivel: 1 },
 ];
 
-// Piezas y Pinturas - Piezas Pintadas
 const JERARQUIA_PIEZAS_PINTADAS: { nombre: string; nivel: number }[] = [
   { nombre: "Formulario Registrar Produccion", nivel: 0 },
   { nombre: "Formulario Registrar Producción", nivel: 0 },
@@ -240,7 +229,6 @@ export default function EditarPermisosGrupo({
       const dataGrupo = await resGrupo.json();
       setGrupo(dataGrupo);
 
-      // Cargar componentes disponibles con estado de asignación
       const resComponentes = await fetch(`/api/rbac/componentes?id_grupo=${idGrupo}`);
       if (!resComponentes.ok) throw new Error("Error al cargar componentes");
       const dataComponentes = await resComponentes.json();
@@ -262,72 +250,41 @@ export default function EditarPermisosGrupo({
 
   const toggleComponente = (idComponente: number) => {
     setComponentes((prev) => {
-      // Encontrar el componente objetivo
       const objetivo = prev.find((c) => c.id_componente === idComponente);
       if (!objetivo) return prev;
 
       const formulario = objetivo.formulario;
+      const modulo = objetivo.modulo;
       const currentAsignado = !!objetivo.asignado;
       const nuevoAsignado = !currentAsignado;
 
-      // CASO ESPECIAL: Si es "Acceso Reportes Maquinarias" (el padre de todos los reportes de maquinarias)
-      if (objetivo.nombre === "Acceso Reportes Maquinarias") {
-        if (!nuevoAsignado) {
-          // Desactivar TODOS los reportes de maquinarias (hijos)
+      // ========== CASO ESPECIAL: REPORTES ==========
+      const esModuloReportes = modulo.toLowerCase().includes("reporte");
+      const esPaginaPrincipalReportes = objetivo.nombre.toLowerCase().includes("pagina principal") || 
+                                         objetivo.nombre.toLowerCase().includes("página principal");
+      
+      if (esModuloReportes) {
+        if (esPaginaPrincipalReportes && !nuevoAsignado) {
           return prev.map((c) => {
-            if (c.id_componente === idComponente) return { ...c, asignado: false };
-            // Desactivar todos los componentes que son reportes de maquinarias
-            if (c.ruta?.startsWith("/reportes/maquinarias/")) return { ...c, asignado: false };
+            if (c.modulo.toLowerCase().includes("reporte")) {
+              return { ...c, asignado: false };
+            }
             return c;
           });
         }
-        // Si estamos activando, solo activar el padre
-        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
-      }
-
-      // CASO ESPECIAL: Si es un reporte hijo de maquinarias, verificar que el padre esté activo
-      if (objetivo.ruta?.startsWith("/reportes/maquinarias/") && nuevoAsignado) {
-        const padre = prev.find((c) => c.nombre === "Acceso Reportes Maquinarias");
-        if (padre && !padre.asignado) {
-          return prev; // no permitir si el padre no está activo
+        
+        if (!esPaginaPrincipalReportes && nuevoAsignado) {
+          const paginaPrincipal = prev.find((c) => 
+            c.modulo.toLowerCase().includes("reporte") && 
+            (c.nombre.toLowerCase().includes("pagina principal") || c.nombre.toLowerCase().includes("página principal"))
+          );
+          
+          if (!paginaPrincipal || !paginaPrincipal.asignado) {
+            return prev;
+          }
         }
-        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
-      }
-
-      // Si es un reporte hijo y estamos desactivando, solo desactivar ese
-      if (objetivo.ruta?.startsWith("/reportes/maquinarias/") && !nuevoAsignado) {
-        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: false } : c));
-      }
-
-      // CASO ESPECIAL: Si es "Página Principal Reportes Ventas" (el padre de todos los reportes de ventas)
-      if (objetivo.nombre === "Página Principal Reportes Ventas" || objetivo.nombre === "Pagina Principal Reportes Ventas") {
-        if (!nuevoAsignado) {
-          // Desactivar TODOS los reportes de ventas (hijos)
-          return prev.map((c) => {
-            if (c.id_componente === idComponente) return { ...c, asignado: false };
-            // Desactivar todos los componentes que son reportes de ventas
-            if (c.ruta?.startsWith("/reportes/ventas/")) return { ...c, asignado: false };
-            return c;
-          });
-        }
-        // Si estamos activando, solo activar el padre
-        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
-      }
-
-      // CASO ESPECIAL: Si es un reporte hijo de ventas, verificar que el padre esté activo
-      if (objetivo.ruta?.startsWith("/reportes/ventas/") && nuevoAsignado) {
-        const padre = prev.find((c) => 
-          c.nombre === "Página Principal Reportes Ventas" || c.nombre === "Pagina Principal Reportes Ventas"
-        );
-        if (padre && !padre.asignado) {
-          return prev; // no permitir si el padre no está activo
-        }
-        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: true } : c));
-      }
-
-      // Si es un reporte hijo de ventas y estamos desactivando, solo desactivar ese
-      if (objetivo.ruta?.startsWith("/reportes/ventas/") && !nuevoAsignado) {
-        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: false } : c));
+        
+        return prev.map((c) => (c.id_componente === idComponente ? { ...c, asignado: nuevoAsignado } : c));
       }
 
       const nivelObjetivo = getNivel(objetivo.nombre, formulario);
@@ -419,10 +376,6 @@ export default function EditarPermisosGrupo({
       const componentesAsignados = componentes
         .filter((c) => c.asignado)
         .map((c) => c.id_componente);
-
-      console.log('[guardarPermisos] Componentes seleccionados:', componentesAsignados);
-      console.log('[guardarPermisos] Total componentes:', componentes.length);
-      console.log('[guardarPermisos] Componentes asignados:', componentesAsignados.length);
 
       const res = await fetch(`/api/rbac/asignar-componentes`, {
         method: "POST",

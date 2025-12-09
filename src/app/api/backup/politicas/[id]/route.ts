@@ -35,7 +35,6 @@ export async function PUT(
   }
 }
 
-// DELETE: Eliminar política
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
