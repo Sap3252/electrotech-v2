@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { ModalDetalleRemito } from "@/components/remitos/ModalDetalleRemito";
 import { formatearFecha } from "@/lib/utils";
 
@@ -182,7 +176,7 @@ function RemitosPage() {
               {/* Cliente */}
               <div>
                 <Label>Cliente</Label>
-                <Select
+                <Combobox
                   value={form.id_cliente}
                   onValueChange={async (v) => {
                     setForm({ ...form, id_cliente: v });
@@ -190,18 +184,14 @@ function RemitosPage() {
                     setErroresForm((prev) => { const copy = { ...prev }; delete copy.id_cliente; return copy; });
                     await cargarPiezasCliente(v);
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((c) => (
-                      <SelectItem key={c.id_cliente} value={String(c.id_cliente)}>
-                        {c.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={clientes.map((c) => ({
+                    value: String(c.id_cliente),
+                    label: c.nombre
+                  }))}
+                  placeholder="Seleccione cliente"
+                  searchPlaceholder="Buscar cliente..."
+                  emptyText="No se encontró el cliente"
+                />
                 {erroresForm.id_cliente && (
                   <p className="text-sm text-red-600 mt-1">{erroresForm.id_cliente}</p>
                 )}
@@ -236,25 +226,18 @@ function RemitosPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
               {/* Seleccionar pieza */}
-              <Select 
+              <Combobox
                 value={piezaSeleccionada}
                 onValueChange={(v) => setPiezaSeleccionada(v)}
                 disabled={!form.id_cliente}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {piezasFiltradas.map((p) => (
-                    <SelectItem
-                      key={p.id_pieza}
-                      value={String(p.id_pieza)}
-                    >
-                      {p.detalle} ({p.ancho_m}x{p.alto_m})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={piezasFiltradas.map((p) => ({
+                  value: String(p.id_pieza),
+                  label: `${p.detalle} (${p.ancho_m}x${p.alto_m})`
+                }))}
+                placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"}
+                searchPlaceholder="Buscar pieza..."
+                emptyText="No se encontraron piezas"
+              />
 
               {/* Cantidad */}
               <Input

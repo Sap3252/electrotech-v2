@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 type ProtectedPageProps = {
@@ -20,8 +20,9 @@ export default function ProtectedPage({
   const [gruposInactivas, setGruposInactivas] = useState<
     { id_grupo: number; nombre: string; id_estado: number; estado: string }[]
   >([]);
+  const verificacionRealizada = useRef(false);
 
-  const verificarAcceso = useCallback(async () => {
+  const verificarAcceso = async () => {
     try {
       const res = await fetch("/api/rbac/verificar-acceso", {
         method: "POST",
@@ -45,8 +46,7 @@ export default function ProtectedPage({
       }
 
       if (!data.tieneAcceso) {
-        // Sin permisos -> redirigir al dashboard
-        // Mostrar mensaje de grupo inactivo si aplica
+        // Sin permisos -> mostrar un solo alert y redirigir
         if (data.grupos_inactivas_ruta && data.grupos_inactivas_ruta.length > 0) {
           const nombres = data.grupos_inactivas_ruta.map((g: any) => `${g.nombre} (${g.estado || 'inactivo'})`).join(', ');
           alert(`Su(s) grupo(s) ${nombres} están inactivos o suspendidos para este formulario. Consulte con el administrador.`);
@@ -64,11 +64,15 @@ export default function ProtectedPage({
     } finally {
       setVerificando(false);
     }
-  }, [ruta, router]);
+  };
 
   useEffect(() => {
+    // Evitar ejecución duplicada en Strict Mode
+    if (verificacionRealizada.current) return;
+    verificacionRealizada.current = true;
+    
     verificarAcceso();
-  }, [verificarAcceso]);
+  }, [ruta]);
 
   if (verificando) {
     return loadingComponent || (

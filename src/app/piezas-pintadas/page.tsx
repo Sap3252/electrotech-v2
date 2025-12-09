@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectTrigger,
@@ -260,7 +261,7 @@ function PiezasPintadasPage() {
               <label className="block text-sm font-medium mb-1">
                 Pieza (cruda)
               </label>
-              <Select
+              <Combobox
                 value={piezaSeleccionada}
                 onValueChange={async (value) => {
                   setPiezaSeleccionada(value);
@@ -279,24 +280,14 @@ function PiezasPintadasPage() {
                     setStockInfo(null);
                   }
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="-- Seleccionar pieza --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {piezas.length === 0 ? (
-                    <SelectItem value="0" disabled>
-                      No hay piezas con stock disponible
-                    </SelectItem>
-                  ) : (
-                    piezas.map((p) => (
-                      <SelectItem key={p.id_pieza} value={String(p.id_pieza)}>
-                        {p.detalle} ({p.ancho_m}m x {p.alto_m}m) - Stock: {p.stock_disponible}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                options={piezas.length === 0 ? [] : piezas.map((p) => ({
+                  value: String(p.id_pieza),
+                  label: `${p.detalle} (${p.ancho_m}m x ${p.alto_m}m) - Stock: ${p.stock_disponible}`
+                }))}
+                placeholder="-- Seleccionar pieza --"
+                searchPlaceholder="Buscar pieza..."
+                emptyText="No hay piezas con stock disponible"
+              />
               
               {stockInfo && (
                 <div className="mt-4 p-4 rounded-lg bg-slate-50 border">
@@ -324,26 +315,25 @@ function PiezasPintadasPage() {
             {/* PINTURA */}
             <div>
               <label className="block text-sm font-medium mb-1">Pintura</label>
-              <select
-                className="w-full border rounded px-2 py-1"
-                value={idPintura}
-                onChange={(e) =>
-                  setIdPintura(e.target.value ? Number(e.target.value) : "")
+              <Combobox
+                value={idPintura ? String(idPintura) : ""}
+                onValueChange={(value) =>
+                  setIdPintura(value ? Number(value) : "")
                 }
-              >
-                <option value="">-- Seleccionar pintura --</option>
-                {pinturas.map((p) => (
-                  <option key={p.id_pintura} value={p.id_pintura}>
-                    {p.id_pintura} — {p.marca} / {p.color} / {p.tipo}
-                  </option>
-                ))}
-              </select>
+                options={pinturas.map((p) => ({
+                  value: String(p.id_pintura),
+                  label: `${p.marca} / ${p.color} / ${p.tipo}`
+                }))}
+                placeholder="-- Seleccionar pintura --"
+                searchPlaceholder="Buscar pintura..."
+                emptyText="No se encontró la pintura"
+              />
             </div>
 
             {/* CABINA */}
             <div>
               <label className="block text-sm font-medium mb-1">Cabina de Pintura</label>
-              <Select
+              <Combobox
                 value={cabinaSeleccionada}
                 onValueChange={async (value) => {
                   setCabinaSeleccionada(value);
@@ -370,24 +360,14 @@ function PiezasPintadasPage() {
                     setCabinaInfo(null);
                   }
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="-- Seleccionar cabina --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cabinas.length === 0 ? (
-                    <SelectItem value="0" disabled>
-                      No hay cabinas disponibles
-                    </SelectItem>
-                  ) : (
-                    cabinas.map((c) => (
-                      <SelectItem key={c.id_cabina} value={String(c.id_cabina)}>
-                        {c.nombre} - {c.disponible} piezas disponibles ({c.porcentaje_uso}% usado)
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                options={cabinas.length === 0 ? [] : cabinas.map((c) => ({
+                  value: String(c.id_cabina),
+                  label: `${c.nombre} - ${c.disponible} piezas disponibles (${c.porcentaje_uso}% usado)`
+                }))}
+                placeholder="-- Seleccionar cabina --"
+                searchPlaceholder="Buscar cabina..."
+                emptyText="No hay cabinas disponibles"
+              />
               
               {cabinaInfo && (
                 <div className={`mt-4 p-4 rounded-lg border ${

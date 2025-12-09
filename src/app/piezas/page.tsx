@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import ProtectedPage from "@/components/ProtectedPage";
 import ProtectedComponent from "@/components/ProtectedComponent";
 
@@ -166,7 +160,7 @@ function PiezasPage() {
 
           <CardContent>
             <form className="flex flex-col gap-4" onSubmit={crearPieza}>
-            <Select
+            <Combobox
                 value={String(form.id_cliente)}
                 onValueChange={(value) => {
                   setForm({ ...form, id_cliente: value });
@@ -177,19 +171,14 @@ function PiezasPage() {
                     return copy;
                   });
                 }}
-              >
-            <SelectTrigger>
-                <SelectValue placeholder="Seleccione un cliente" />
-            </SelectTrigger>
-
-            <SelectContent>
-                {clientes.map((c) => (
-                <SelectItem key={c.id_cliente} value={String(c.id_cliente)}>
-                    {c.nombre}
-                </SelectItem>
-                ))}
-            </SelectContent>
-            </Select>
+                options={clientes.map((c) => ({
+                  value: String(c.id_cliente),
+                  label: c.nombre
+                }))}
+                placeholder="Seleccione un cliente"
+                searchPlaceholder="Buscar cliente..."
+                emptyText="No se encontró el cliente"
+              />
 
             <Input
               placeholder="Ancho (m)"

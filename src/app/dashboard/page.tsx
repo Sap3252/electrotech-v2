@@ -15,10 +15,19 @@ type UserSession = {
   idAuditoria: number;
 };
 
+type PermisosAcceso = {
+  panelAdmin: boolean;
+  panelBaseDatos: boolean;
+};
+
 export default function Dashboard() {
   const router = useRouter();
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [permisos, setPermisos] = useState<PermisosAcceso>({
+    panelAdmin: false,
+    panelBaseDatos: false,
+  });
 
   //Verificar sesión con el servidor
   useEffect(() => {
@@ -36,6 +45,10 @@ export default function Dashboard() {
         
         const data = await res.json();
         setSession(data);
+        
+        // Verificar permisos RBAC para los paneles
+        await verificarPermisos();
+        
         setLoading(false);
       } catch (error) {
         console.error("Error verificando sesión:", error);
@@ -44,6 +57,29 @@ export default function Dashboard() {
     }
     checkAuth();
   }, [router]);
+
+  async function verificarPermisos() {
+    try {
+      // Verificar permiso para Panel Base de Datos (componente 130)
+      const [resBaseDatos] = await Promise.all([
+        fetch("/api/rbac/verificar-componente", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_componente: 130 }),
+        }),
+      ]);
+
+      const dataBaseDatos = await resBaseDatos.json();
+      console.log("Permisos Base Datos:", dataBaseDatos);
+
+      setPermisos({
+        panelAdmin: false, // Se determina por grupo Admin
+        panelBaseDatos: dataBaseDatos.tieneAcceso || false,
+      });
+    } catch (error) {
+      console.error("Error verificando permisos:", error);
+    }
+  }
 
   //Si todavía no se cargo sesion = no mostrar nada
   if (loading || !session) return null;
@@ -206,20 +242,21 @@ export default function Dashboard() {
 
       <div className="mt-10 flex gap-4 flex-wrap">
         {session.grupos.includes("Admin") && (
-          <>
-            <Button
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => router.push("/dashboard/admin")}
-            >
-              Panel de Administración
-            </Button>
-            <Button
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => router.push("/dashboard/base-datos")}
-            >
-              Panel de Base de Datos
-            </Button>
-          </>
+          <Button
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => router.push("/dashboard/admin")}
+          >
+            Panel de Administración
+          </Button>
+        )}
+        
+        {(session.grupos.includes("Admin") || permisos.panelBaseDatos) && (
+          <Button
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={() => router.push("/dashboard/base-datos")}
+          >
+            Panel de Base de Datos
+          </Button>
         )}
         
         <Button

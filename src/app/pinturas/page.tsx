@@ -6,13 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import ProtectedPage from "@/components/ProtectedPage";
 import ProtectedComponent from "@/components/ProtectedComponent";
 
@@ -184,25 +178,20 @@ function PinturasPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Marca</Label>
-              <Select
+              <Combobox
                 value={form.id_marca}
                 onValueChange={(value) => {
                   setForm({ ...form, id_marca: value });
                   setErrors((prev) => { const copy = { ...prev }; delete copy.id_marca; delete copy.general; return copy; });
-                }
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  {marcas.map((m: any) => (
-                    <SelectItem key={m.id_marca} value={String(m.id_marca)}>
-                      {m.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                }}
+                options={marcas.map((m: any) => ({
+                  value: String(m.id_marca),
+                  label: m.nombre
+                }))}
+                placeholder="Seleccione marca"
+                searchPlaceholder="Buscar marca..."
+                emptyText="No se encontró la marca"
+              />
               {errors.id_marca && (
                 <p className="text-sm text-red-600">{errors.id_marca}</p>
               )}
@@ -210,25 +199,20 @@ function PinturasPage() {
 
             <div>
               <Label>Tipo de Pintura</Label>
-              <Select
+              <Combobox
                 value={form.id_tipo}
                 onValueChange={(value) => {
                   setForm({ ...form, id_tipo: value });
                   setErrors((prev) => { const copy = { ...prev }; delete copy.id_tipo; delete copy.general; return copy; });
-                }
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione tipo de pintura" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tipos.map((t: any) => (
-                    <SelectItem key={t.id_tipo} value={String(t.id_tipo)}>
-                      {t.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                }}
+                options={tipos.map((t: any) => ({
+                  value: String(t.id_tipo),
+                  label: t.nombre
+                }))}
+                placeholder="Seleccione tipo de pintura"
+                searchPlaceholder="Buscar tipo..."
+                emptyText="No se encontró el tipo"
+              />
               {errors.id_tipo && (
                 <p className="text-sm text-red-600">{errors.id_tipo}</p>
               )}
@@ -236,25 +220,20 @@ function PinturasPage() {
 
             <div>
               <Label>Color</Label>
-              <Select
+              <Combobox
                 value={form.id_color}
                 onValueChange={(value) => {
                   setForm({ ...form, id_color: value });
                   setErrors((prev) => { const copy = { ...prev }; delete copy.id_color; delete copy.general; return copy; });
-                }
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colores.map((c: any) => (
-                    <SelectItem key={c.id_color} value={String(c.id_color)}>
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                }}
+                options={colores.map((c: any) => ({
+                  value: String(c.id_color),
+                  label: c.nombre
+                }))}
+                placeholder="Seleccione color"
+                searchPlaceholder="Buscar color..."
+                emptyText="No se encontró el color"
+              />
               {errors.id_color && (
                 <p className="text-sm text-red-600">{errors.id_color}</p>
               )}
@@ -262,25 +241,20 @@ function PinturasPage() {
 
             <div>
               <Label>Proveedor</Label>
-              <Select
+              <Combobox
                 value={form.id_proveedor}
                 onValueChange={(value) => {
                   setForm({ ...form, id_proveedor: value });
                   setErrors((prev) => { const copy = { ...prev }; delete copy.id_proveedor; delete copy.general; return copy; });
-                }
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione proveedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {proveedores.map((p: any) => (
-                    <SelectItem key={p.id_proveedor} value={String(p.id_proveedor)}>
-                      {p.nombre || p.id_proveedor}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                }}
+                options={proveedores.map((p: any) => ({
+                  value: String(p.id_proveedor),
+                  label: p.nombre || String(p.id_proveedor)
+                }))}
+                placeholder="Seleccione proveedor"
+                searchPlaceholder="Buscar proveedor..."
+                emptyText="No se encontró el proveedor"
+              />
               {errors.id_proveedor && (
                 <p className="text-sm text-red-600">{errors.id_proveedor}</p>
               )}

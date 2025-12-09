@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { ModalDetalleFactura } from "@/components/facturas/ModalDetalleFactura";
 import { formatearFecha } from "@/lib/utils";
 
@@ -218,7 +212,7 @@ function FacturacionPage() {
             {/* CLIENTE */}
             <div>
               <Label>Cliente</Label>
-              <Select
+              <Combobox
                 value={form.id_cliente}
                 onValueChange={async (v) => {
                   setForm({ ...form, id_cliente: v });
@@ -226,21 +220,14 @@ function FacturacionPage() {
                   setSelectedPieza(null);
                   await cargarPiezasCliente(v);
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map((c) => (
-                    <SelectItem
-                      key={c.id_cliente}
-                      value={String(c.id_cliente)}
-                    >
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={clientes.map((c) => ({
+                  value: String(c.id_cliente),
+                  label: c.nombre
+                }))}
+                placeholder="Seleccione un cliente"
+                searchPlaceholder="Buscar cliente..."
+                emptyText="No se encontró el cliente"
+              />
             </div>
 
             {/* ITEM */}
@@ -249,29 +236,21 @@ function FacturacionPage() {
               {/* PIEZA */}
               <div>
                 <Label>Pieza Pintada</Label>
-                <Select
+                <Combobox
                   value={selectedPieza ? String(selectedPieza.id_pieza_pintada) : ""}
                   onValueChange={(v) => {
                     const p = piezasFiltradas.find((x) => x.id_pieza_pintada == Number(v));
                     setSelectedPieza(p || null);
                   }}
                   disabled={!form.id_cliente}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {piezasFiltradas.map((p) => (
-                      <SelectItem
-                        key={p.id_pieza_pintada}
-                        value={String(p.id_pieza_pintada)}
-                      >
-                        {p.descripcion} — Disponible:{" "}
-                        {p.cantidad - p.cantidad_facturada}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={piezasFiltradas.map((p) => ({
+                    value: String(p.id_pieza_pintada),
+                    label: `${p.descripcion} — Disponible: ${p.cantidad - p.cantidad_facturada}`
+                  }))}
+                  placeholder={!form.id_cliente ? "Primero seleccione cliente" : "Seleccione pieza"}
+                  searchPlaceholder="Buscar pieza..."
+                  emptyText="No se encontraron piezas"
+                />
               </div>
 
               {/* CANTIDAD */}
