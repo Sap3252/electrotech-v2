@@ -206,12 +206,20 @@ export default function Dashboard() {
 
       <div className="mt-10 flex gap-4 flex-wrap">
         {session.grupos.includes("Admin") && (
-          <Button
-            className="bg-blue-600 text-white hover:bg-blue-700"
-            onClick={() => router.push("/dashboard/admin")}
-          >
-            Panel de Administración
-          </Button>
+          <>
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              onClick={() => router.push("/dashboard/admin")}
+            >
+              Panel de Administración
+            </Button>
+            <Button
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={() => router.push("/dashboard/base-datos")}
+            >
+              Panel de Base de Datos
+            </Button>
+          </>
         )}
         
         <Button
