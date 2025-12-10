@@ -5,14 +5,11 @@ import { jwtVerify } from "jose";
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function middleware(req: NextRequest) {
-  console.log("🔒 Middleware ejecutándose para:", req.nextUrl.pathname);
-  
   const token = req.cookies.get("session")?.value;
   const { pathname } = req.nextUrl;
 
   // Redirigir raíz a login
   if (pathname === "/") {
-    console.log("🏠 Ruta raíz, redirigiendo a /login");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -20,23 +17,19 @@ export async function middleware(req: NextRequest) {
   const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
   
   if (publicPaths.includes(pathname) || pathname.startsWith("/api/auth")) {
-    console.log("✅ Ruta pública, permitiendo acceso");
     return NextResponse.next();
   }
 
   // Si no hay token, redirigir a login
   if (!token) {
-    console.log("❌ No hay token, redirigiendo a /login");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   // Verificar token
   try {
     await jwtVerify(token, SECRET);
-    console.log("✅ Token válido, permitiendo acceso");
     return NextResponse.next();
   } catch {
-    console.log("❌ Token inválido, redirigiendo a /login");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
