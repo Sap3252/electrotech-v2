@@ -571,9 +571,9 @@ export default function EditarPermisosGrupo({
 
                   // Agrupar los reportes de ventas en una sola sección
                   const esReporteVentas = modulo === "Reportes" && 
-                    (formulario.includes("Ventas") || formulario.includes("Participación") || 
-                     formulario.includes("Pintura") || formulario.includes("Evolución") || 
-                     formulario.includes("Consumo"));
+                    (formulario.includes("Ventas") || formulario.includes("Pintura") || 
+                     formulario.includes("Evolución") || formulario.includes("Consumo") ||
+                     formulario.includes("Participacion"));
                   
                   if (esReporteVentas && formulario !== "Reportes Ventas Principal") {
                     return null; // Se renderizará con el formulario principal
@@ -582,7 +582,8 @@ export default function EditarPermisosGrupo({
                   // Si es el formulario principal de reportes ventas, agrupar todos
                   if (formulario === "Reportes Ventas Principal") {
                     const todosReportesVentas = componentes.filter(c => 
-                      c.modulo === "Reportes"
+                      c.modulo === "Reportes" && 
+                      (c.formulario === "Reportes Ventas Principal" || c.formulario.includes("Ventas") || c.formulario.includes("Pintura") || c.formulario.includes("Evolución") || c.formulario.includes("Consumo") || c.formulario.includes("Participacion"))
                     );
                     
                     return (
