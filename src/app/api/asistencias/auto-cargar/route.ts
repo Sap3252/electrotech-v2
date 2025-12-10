@@ -60,10 +60,9 @@ export async function POST(request: Request) {
         hasta.setDate(hasta.getDate() - 1);
       }
 
-      // No permitir fechas futuras
-      if (hasta >= hoy) {
+      // No permitir fechas futuras más allá de hoy
+      if (hasta > hoy) {
         hasta = new Date(hoy);
-        hasta.setDate(hasta.getDate() - 1);
       }
 
       let registrosCreados = 0;

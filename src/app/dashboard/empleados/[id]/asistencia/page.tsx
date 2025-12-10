@@ -321,18 +321,19 @@ export default function AsistenciaEmpleadoPage({ params }: { params: Promise<{ i
       // Calcular primer día del mes seleccionado
       const fechaDesde = `${anioActual}-${String(mesActual).padStart(2, '0')}-01`;
       
-      // Calcular último día del mes o ayer, lo que sea menor
+      // Calcular último día del mes o último día laborable completo, lo que sea menor
       const ultimoDiaMes = new Date(anioActual, mesActual, 0).getDate();
       const hoy = new Date();
-      const ayer = new Date(hoy);
-      ayer.setDate(ayer.getDate() - 1);
+      const mesActualEsActual = hoy.getFullYear() === anioActual && (hoy.getMonth() + 1) === mesActual;
       
       let fechaHasta: string;
-      const ultimaFechaMes = new Date(anioActual, mesActual - 1, ultimoDiaMes);
       
-      if (ayer < ultimaFechaMes) {
-        fechaHasta = ayer.toISOString().split('T')[0];
+      if (mesActualEsActual) {
+        // Si estamos en el mes actual, cargar hasta hoy
+        const hoy = new Date();
+        fechaHasta = hoy.toISOString().split('T')[0];
       } else {
+        // Para meses pasados, usar el último día del mes
         fechaHasta = `${anioActual}-${String(mesActual).padStart(2, '0')}-${ultimoDiaMes}`;
       }
 
