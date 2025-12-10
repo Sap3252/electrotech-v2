@@ -484,7 +484,7 @@ function MaquinariasPage() {
 
                     {/* Acciones */}
                     <div className="flex gap-2">
-                      <Protegido nombre="Botón Editar Cabina">
+                      <Protegido nombre="Boton Editar Cabina">
                         <Button
                           size="sm"
                           variant="outline"
@@ -503,7 +503,7 @@ function MaquinariasPage() {
                           Editar
                         </Button>
                       </Protegido>
-                      <Protegido nombre="Botón Eliminar Cabina">
+                      <Protegido nombre="Boton Eliminar Cabina">
                         <Button
                           size="sm"
                           variant="destructive"
@@ -574,7 +574,7 @@ function MaquinariasPage() {
                     </p>
 
                     <div className="flex gap-2 mb-2">
-                      <Protegido nombre="Botón Editar Pistola">
+                      <Protegido nombre="Boton Editar Pistola">
                         <Button
                           size="sm"
                           variant="outline"
@@ -591,7 +591,7 @@ function MaquinariasPage() {
                           Editar
                         </Button>
                       </Protegido>
-                      <Protegido nombre="Botón Eliminar Pistola">
+                      <Protegido nombre="Boton Eliminar Pistola">
                         <Button
                           size="sm"
                           variant="destructive"
@@ -602,7 +602,7 @@ function MaquinariasPage() {
                       </Protegido>
                     </div>
 
-                    <Protegido nombre="Botón Registrar Mantenimiento Pistola">
+                    <Protegido nombre="Boton Registrar Mantenimiento Pistola">
                       <Button
                         size="sm"
                         className="w-full"
@@ -679,7 +679,7 @@ function MaquinariasPage() {
                     </div>
 
                     <div className="flex gap-2 mb-2">
-                      <Protegido nombre="Botón Editar Horno">
+                      <Protegido nombre="Boton Editar Horno">
                         <Button
                           size="sm"
                           variant="outline"
@@ -698,7 +698,7 @@ function MaquinariasPage() {
                           Editar
                         </Button>
                       </Protegido>
-                      <Protegido nombre="Botón Eliminar Horno">
+                      <Protegido nombre="Boton Eliminar Horno">
                         <Button
                           size="sm"
                           variant="destructive"
@@ -709,7 +709,7 @@ function MaquinariasPage() {
                       </Protegido>
                     </div>
 
-                    <Protegido nombre="Botón Registrar Mantenimiento Horno">
+                    <Protegido nombre="Boton Registrar Mantenimiento Horno">
                       <Button
                         size="sm"
                         className="w-full"

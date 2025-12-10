@@ -9,38 +9,38 @@ const JERARQUIA_PERMISOS: Record<string, string[]> = {
   "Tab Cabinas": [
     "Ver Cards Cabinas",
     "Formulario Nueva Cabina",
-    "Botón Editar Cabina",
-    "Botón Eliminar Cabina",
+    "Boton Editar Cabina",
+    "Boton Eliminar Cabina",
   ],
   "Ver Cards Cabinas": [
-    "Botón Editar Cabina",
-    "Botón Eliminar Cabina",
+    "Boton Editar Cabina",
+    "Boton Eliminar Cabina",
   ],
   // Pistolas
   "Tab Pistolas": [
     "Ver Cards Pistolas",
     "Formulario Nueva Pistola",
-    "Botón Editar Pistola",
-    "Botón Eliminar Pistola",
-    "Botón Registrar Mantenimiento Pistola",
+    "Boton Editar Pistola",
+    "Boton Eliminar Pistola",
+    "Boton Registrar Mantenimiento Pistola",
   ],
   "Ver Cards Pistolas": [
-    "Botón Editar Pistola",
-    "Botón Eliminar Pistola",
-    "Botón Registrar Mantenimiento Pistola",
+    "Boton Editar Pistola",
+    "Boton Eliminar Pistola",
+    "Boton Registrar Mantenimiento Pistola",
   ],
   // Hornos
   "Tab Hornos": [
     "Ver Cards Hornos",
     "Formulario Nuevo Horno",
-    "Botón Editar Horno",
-    "Botón Eliminar Horno",
-    "Botón Registrar Mantenimiento Horno",
+    "Boton Editar Horno",
+    "Boton Eliminar Horno",
+    "Boton Registrar Mantenimiento Horno",
   ],
   "Ver Cards Hornos": [
-    "Botón Editar Horno",
-    "Botón Eliminar Horno",
-    "Botón Registrar Mantenimiento Horno",
+    "Boton Editar Horno",
+    "Boton Eliminar Horno",
+    "Boton Registrar Mantenimiento Horno",
   ],
 };
 
