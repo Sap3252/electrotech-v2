@@ -285,8 +285,8 @@ export function createCabinaSubjectWithObservers(): CabinaSubject {
   const subject = new CabinaSubject();
 
   subject.addObserver(new LimiteDiarioCabinaObserver());
-  subject.addObserver(new MantenimientoPistolaObserver());
-  subject.addObserver(new MantenimientoHornoObserver());
+  subject.addObserver(new PistolaMaintenanceObserver());
+  subject.addObserver(new HornoMaintenanceObserver());
   subject.addObserver(new ConsumoGasObserver());
   subject.addObserver(new EstadisticasCabinaObserver());
 

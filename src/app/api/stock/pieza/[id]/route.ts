@@ -5,7 +5,7 @@ import { RowDataPacket } from "mysql2";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
 
@@ -14,7 +14,8 @@ export async function GET(
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
-  const id_pieza = Number(params.id);
+  const { id } = await params;
+  const id_pieza = Number(id);
   if (Number.isNaN(id_pieza)) {
     return NextResponse.json({ error: "ID de pieza inválida" }, { status: 400 });
   }

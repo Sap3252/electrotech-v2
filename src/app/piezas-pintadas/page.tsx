@@ -177,9 +177,15 @@ function PiezasPintadasPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        console.error("Error al registrar lote:", data);
-        setMensajeError(data.error || "Error al registrar piezas pintadas.");
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { error: text || `Error HTTP ${res.status}` };
+        }
+        console.error("Error al registrar lote:", data, "Status:", res.status);
+        setMensajeError(data.error || `Error al registrar piezas pintadas (${res.status})`);
         return;
       }
 

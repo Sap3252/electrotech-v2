@@ -168,9 +168,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Obtener dimensiones de la pieza
+    // 2) Obtener dimensiones y nombre de la pieza
     const [piezaRows] = await pool.query<RowDataPacket[]>(
-      "SELECT ancho_m, alto_m FROM Pieza WHERE id_pieza = ?",
+      "SELECT detalle, ancho_m, alto_m FROM Pieza WHERE id_pieza = ?",
       [id_pieza]
     );
 
@@ -179,6 +179,7 @@ export async function POST(req: Request) {
     }
 
     const pieza = piezaRows[0];
+    const piezaNombre = pieza.detalle;
 
     // 3) Calcular consumo usando patron Strategy 
     const strategy = estrategia === "highdensity" 
@@ -194,9 +195,14 @@ export async function POST(req: Request) {
     
     const consumo_total_kg = consumo_por_pieza * cantidad;
 
-    // 4) Verificar stock de pintura disponible
+    // 4) Verificar stock de pintura disponible y obtener nombre
     const [pinturaRows] = await pool.query<RowDataPacket[]>(
-      "SELECT cantidad_kg FROM Pintura WHERE id_pintura = ?",
+      `SELECT p.cantidad_kg, CONCAT(m.nombre, ' - ', c.nombre, ' (', t.nombre, ')') as pintura_nombre
+       FROM Pintura p
+       JOIN Marca m ON m.id_marca = p.id_marca
+       JOIN Color c ON c.id_color = p.id_color
+       JOIN TipoPintura t ON t.id_tipo = p.id_tipo
+       WHERE p.id_pintura = ?`,
       [id_pintura]
     );
 
@@ -247,10 +253,44 @@ export async function POST(req: Request) {
         [id_pieza, id_pintura, id_cabina, cantidad, consumo_total_kg]
       );
 
+      // Obtener el ID de la pieza pintada insertada
+      const [insertRows] = insertResult as [ResultSetHeader, unknown];
+      const idPiezaPintada = insertRows.insertId;
+
+      // Crear registro de auditoría directamente con toda la información
+      const pinturaNombre = pinturaRows[0]?.pintura_nombre || 'N/A';
+      const cabinaNombre = cabinaData.nombre || 'N/A';
+      const datosNuevos = JSON.stringify({
+        id_pieza_pintada: idPiezaPintada,
+        fecha: new Date().toISOString().split('T')[0],
+        cantidad: cantidad,
+        pieza_nombre: piezaNombre,
+        cabina_nombre: cabinaNombre,
+        pintura_nombre: pinturaNombre,
+        cantidad_facturada: 0,
+        consumo_estimado_kg: consumo_total_kg
+      });
+
+      await conn.query(
+        `INSERT INTO AuditoriaTrazabilidad 
+         (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+         VALUES ('PiezaPintada', ?, 'INSERT', ?, ?, ?)`,
+        [idPiezaPintada, datosNuevos, 'app_user', session.id_usuario]
+      );
+
       // 6) Descontar la pintura consumida del stock
       await conn.query(
         `UPDATE Pintura SET cantidad_kg = cantidad_kg - ? WHERE id_pintura = ?`,
         [consumo_total_kg, id_pintura]
+      );
+
+      // 6.1) Descontar piezas del stock (StockPieza)
+      await conn.query(
+        `UPDATE StockPieza SET 
+          total_pintada = total_pintada + ?,
+          stock_disponible = stock_disponible - ?
+         WHERE id_pieza = ?`,
+        [cantidad, cantidad, id_pieza]
       );
 
       // 7) Usar el sistema Observer para generar alertas
@@ -295,11 +335,13 @@ export async function POST(req: Request) {
       });
 
       // 8) Guardar alertas en la base de datos
+      // Nota: La tabla alertasmaquinaria tiene estructura: id, id_maquinaria, fecha, mensaje
+      // Combinamos la información del alert en el mensaje
       for (const alerta of alertas) {
         await conn.query(
-          `INSERT INTO alertasmaquinaria (tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, fecha)
-           VALUES (?, ?, ?, ?, ?, NOW())`,
-          [alerta.tipo_equipo, alerta.id_equipo, alerta.tipo_alerta, alerta.mensaje, alerta.nivel]
+          `INSERT INTO alertasmaquinaria (id_maquinaria, fecha, mensaje)
+           VALUES (?, NOW(), ?)`,
+          [alerta.id_equipo, `[${alerta.nivel.toUpperCase()}] [${alerta.tipo_equipo}] ${alerta.mensaje}`]
         );
       }
 

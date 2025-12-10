@@ -132,6 +132,24 @@ export default function AdminPage() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Gestión de Auditoría */}
+        <Card className="shadow hover:shadow-lg transition">
+          <CardHeader>
+            <CardTitle>Gestión de Auditoría</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-gray-600">
+              Trazabilidad completa de cambios en piezas pintadas. Ver historial de creaciones, modificaciones y eliminaciones.
+            </p>
+            <Button
+              className="w-full bg-purple-600 text-white hover:bg-purple-700"
+              onClick={() => router.push("/dashboard/admin/auditoria")}
+            >
+              Ver Auditoría
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
