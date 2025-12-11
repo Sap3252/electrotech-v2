@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import {
   BarChart,
   Bar,
@@ -140,7 +141,8 @@ export default function AuditoriaPage() {
   const [accion, setAccion] = useState<string>("");
   const [fechaDesde, setFechaDesde] = useState<string>("");
   const [fechaHasta, setFechaHasta] = useState<string>("");
-  const [idRegistro, setIdRegistro] = useState<string>("");
+  const [loteSeleccionado, setLoteSeleccionado] = useState<string>("");
+  const [lotes, setLotes] = useState<{ id_pieza_pintada: number; pieza_nombre: string; pintura_nombre: string }[]>([]);
 
   // Estado para Reportes
   const [reportesData, setReportesData] = useState<ReportesData | null>(null);
@@ -162,6 +164,22 @@ export default function AuditoriaPage() {
       }
     }
     fetchUsuarios();
+  }, []);
+
+  // Cargar lotes
+  useEffect(() => {
+    async function fetchLotes() {
+      try {
+        const res = await fetch("/api/auditoria/lotes");
+        if (res.ok) {
+          const data = await res.json();
+          setLotes(data);
+        }
+      } catch (error) {
+        console.error("Error cargando lotes:", error);
+      }
+    }
+    fetchLotes();
   }, []);
 
   // Fetch Sesiones
@@ -201,7 +219,7 @@ export default function AuditoriaPage() {
       if (accion && accion !== "all") params.set("accion", accion);
       if (fechaDesde) params.set("fechaDesde", fechaDesde);
       if (fechaHasta) params.set("fechaHasta", fechaHasta);
-      if (idRegistro) params.set("idRegistro", idRegistro);
+      if (loteSeleccionado) params.set("idRegistro", loteSeleccionado);
       params.set("limit", limit.toString());
       params.set("offset", (page * limit).toString());
 
@@ -222,7 +240,7 @@ export default function AuditoriaPage() {
       console.error("Error:", error);
       setLoading(false);
     }
-  }, [accion, fechaDesde, fechaHasta, idRegistro, page, router]);
+  }, [accion, fechaDesde, fechaHasta, loteSeleccionado, page, router]);
 
   // Fetch Reportes
   const fetchReportes = useCallback(async () => {
@@ -562,7 +580,7 @@ export default function AuditoriaPage() {
               <CardTitle>Filtros - Trazabilidad de Piezas Pintadas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
                   <Label>Acción</Label>
                   <Select value={accion} onValueChange={setAccion}>
@@ -576,6 +594,21 @@ export default function AuditoriaPage() {
                       <SelectItem value="DELETE">Eliminar</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label>Lote (ID - Pieza - Pintura)</Label>
+                  <Combobox
+                    options={lotes.map((lote): ComboboxOption => ({
+                      value: String(lote.id_pieza_pintada),
+                      label: `#${lote.id_pieza_pintada} - ${lote.pieza_nombre} - ${lote.pintura_nombre}`
+                    }))}
+                    value={loteSeleccionado}
+                    onValueChange={setLoteSeleccionado}
+                    placeholder="Seleccionar lote..."
+                    searchPlaceholder="Buscar por ID, pieza o pintura..."
+                    emptyText="No se encontraron lotes."
+                  />
                 </div>
 
                 <div>
@@ -595,21 +628,21 @@ export default function AuditoriaPage() {
                     onChange={(e) => setFechaHasta(e.target.value)}
                   />
                 </div>
+              </div>
 
-                <div className="flex items-end gap-2">
-                  <Button onClick={() => { setPage(0); fetchAuditoria(); }} className="bg-purple-600 hover:bg-purple-700">
-                    Buscar
-                  </Button>
-                  <Button variant="outline" onClick={() => {
-                    setAccion("");
-                    setFechaDesde("");
-                    setFechaHasta("");
-                    setIdRegistro("");
-                    setPage(0);
-                  }}>
-                    Limpiar
-                  </Button>
-                </div>
+              <div className="flex items-end gap-2">
+                <Button onClick={() => { setPage(0); fetchAuditoria(); }} className="bg-purple-600 hover:bg-purple-700">
+                  Buscar
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setAccion("");
+                  setLoteSeleccionado("");
+                  setFechaDesde("");
+                  setFechaHasta("");
+                  setPage(0);
+                }}>
+                  Limpiar
+                </Button>
               </div>
             </CardContent>
           </Card>
