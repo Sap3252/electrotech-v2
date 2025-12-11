@@ -122,8 +122,33 @@ function PiezasPage() {
   };
 
   const eliminarPieza = async (id: number) => {
-    await fetch(`/api/piezas/${id}`, { method: "DELETE" });
-    cargar();
+    if (!confirm("¿Está seguro de eliminar esta pieza?")) return;
+    
+    const res = await fetch(`/api/piezas/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      cargar();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Error al eliminar la pieza");
+    }
+  };
+
+  const cambiarEstadoPieza = async (id: number, nuevoEstado: boolean) => {
+    const accion = nuevoEstado ? "habilitar" : "deshabilitar";
+    if (!confirm(`¿Está seguro de ${accion} esta pieza?`)) return;
+
+    const res = await fetch(`/api/piezas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ habilitada: nuevoEstado })
+    });
+
+    if (res.ok) {
+      cargar();
+    } else {
+      const data = await res.json();
+      alert(data.error || `Error al ${accion} la pieza`);
+    }
   };
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +273,7 @@ function PiezasPage() {
                 <th>Ancho</th>
                 <th>Alto</th>
                 <th>Detalle</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -270,6 +296,15 @@ function PiezasPage() {
                     <td>{p.ancho_m} m</td>
                     <td>{p.alto_m} m</td>
                     <td>{p.detalle}</td>
+                    <td>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        p.habilitada 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {p.habilitada ? "Activa" : "Inactiva"}
+                      </span>
+                    </td>
 
                   <td className="flex gap-2 py-2">
                     <ProtectedComponent componenteId={3}>
@@ -286,6 +321,15 @@ function PiezasPage() {
                         }}
                       >
                         Editar
+                      </Button>
+                    </ProtectedComponent>
+
+                    <ProtectedComponent componenteId={3}>
+                      <Button
+                        variant={p.habilitada ? "outline" : "default"}
+                        onClick={() => cambiarEstadoPieza(p.id_pieza, !p.habilitada)}
+                      >
+                        {p.habilitada ? "Deshabilitar" : "Habilitar"}
                       </Button>
                     </ProtectedComponent>
 

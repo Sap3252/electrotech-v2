@@ -180,6 +180,7 @@ CREATE TABLE `pieza` (
   `ancho_m` DECIMAL(10,2) NOT NULL,
   `alto_m` DECIMAL(10,2) NOT NULL,
   `detalle` VARCHAR(255) DEFAULT NULL,
+  `habilitada` TINYINT(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_pieza`),
   KEY `id_cliente` (`id_cliente`),
   CONSTRAINT `pieza_ibfk_1` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`)
@@ -233,6 +234,7 @@ CREATE TABLE `pintura` (
   `id_proveedor` INT NOT NULL,
   `cantidad_kg` DECIMAL(10,2) NOT NULL,
   `precio_unitario` DECIMAL(10,2) NOT NULL,
+  `habilitada` TINYINT(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_pintura`),
   KEY `id_marca` (`id_marca`),
   KEY `id_color` (`id_color`),
@@ -386,13 +388,15 @@ CREATE TABLE `maquinariahistorial` (
 
 -- Tabla: AlertasMaquinaria
 CREATE TABLE `alertasmaquinaria` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `id_maquinaria` INT NOT NULL,
-  `fecha` DATETIME NOT NULL,
+  `id_alerta` INT NOT NULL AUTO_INCREMENT,
+  `tipo_equipo` ENUM('cabina', 'pistola', 'horno') NOT NULL,
+  `id_equipo` INT NOT NULL,
+  `tipo_alerta` ENUM('limite_diario', 'mantenimiento', 'temperatura', 'gas') NOT NULL,
   `mensaje` VARCHAR(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_maquinaria` (`id_maquinaria`),
-  CONSTRAINT `alertasmaquinaria_ibfk_1` FOREIGN KEY (`id_maquinaria`) REFERENCES `maquinaria` (`id_maquinaria`)
+  `nivel` ENUM('info', 'warning', 'critical') NOT NULL DEFAULT 'info',
+  `leida` TINYINT(1) NOT NULL DEFAULT 0,
+  `fecha` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_alerta`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ==========================================

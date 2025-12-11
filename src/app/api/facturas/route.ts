@@ -73,6 +73,42 @@ export async function POST(req: Request) {
            WHERE id_pieza_pintada = ?`,
           [cantidad, id_pieza_pintada]
         );
+
+        // 2.4) Obtener info adicional para auditoría
+        const [piezaInfo] = await conn.query<RowDataPacket[]>(
+          `SELECT pp.id_pieza_pintada, p.detalle as pieza_nombre, 
+                  CONCAT(m.nombre, ' - ', c.nombre, ' (', t.nombre, ')') as pintura_nombre, 
+                  pp.cantidad as cantidad_total,
+                  pp.cantidad_facturada as cantidad_facturada_actual
+           FROM PiezaPintada pp
+           JOIN Pieza p ON p.id_pieza = pp.id_pieza
+           JOIN Pintura pi ON pi.id_pintura = pp.id_pintura
+           JOIN Marca m ON m.id_marca = pi.id_marca
+           JOIN Color c ON c.id_color = pi.id_color
+           JOIN TipoPintura t ON t.id_tipo = pi.id_tipo
+           WHERE pp.id_pieza_pintada = ?`,
+          [id_pieza_pintada]
+        );
+
+        // 2.5) Registrar auditoría FACTURADO para cada lote
+        const datosFacturado = JSON.stringify({
+          id_factura: id_factura,
+          id_pieza_pintada: id_pieza_pintada,
+          pieza_nombre: piezaInfo[0]?.pieza_nombre || 'N/A',
+          pintura_nombre: piezaInfo[0]?.pintura_nombre || 'N/A',
+          cantidad_facturada: cantidad,
+          precio_unitario: precio_unitario,
+          subtotal: subtotal,
+          cantidad_total_lote: piezaInfo[0]?.cantidad_total || 0,
+          cantidad_facturada_acumulada: piezaInfo[0]?.cantidad_facturada_actual || 0
+        });
+
+        await conn.query(
+          `INSERT INTO AuditoriaTrazabilidad 
+           (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+           VALUES ('PiezaPintada', ?, 'FACTURADO', ?, 'app_user', ?)`,
+          [id_pieza_pintada, datosFacturado, session.id_usuario]
+        );
       }
 
       // 3) Actualizar total factura

@@ -4,13 +4,23 @@ import { pool } from "@/lib/db";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id_cliente = searchParams.get("id_cliente");
+  const soloHabilitadas = searchParams.get("habilitadas") === "true";
 
   let query = "SELECT * FROM Pieza";
   const params: any[] = [];
+  const conditions: string[] = [];
 
   if (id_cliente) {
-    query += " WHERE id_cliente = ?";
+    conditions.push("id_cliente = ?");
     params.push(id_cliente);
+  }
+
+  if (soloHabilitadas) {
+    conditions.push("habilitada = 1");
+  }
+
+  if (conditions.length > 0) {
+    query += " WHERE " + conditions.join(" AND ");
   }
 
   query += " ORDER BY id_pieza DESC";

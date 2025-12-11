@@ -7,7 +7,7 @@ interface AuditoriaRow extends RowDataPacket {
   id_auditoria: number;
   tabla_afectada: string;
   id_registro: number;
-  accion: "INSERT" | "UPDATE" | "DELETE";
+  accion: "INSERT" | "UPDATE" | "DELETE" | "FACTURADO";
   datos_anteriores: object | null;
   datos_nuevos: object | null;
   usuario_sistema: string;

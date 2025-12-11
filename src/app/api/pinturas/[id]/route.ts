@@ -113,6 +113,40 @@ export async function PUT(
 // =======================
 // DELETE
 // =======================
+// PATCH - Habilitar/Deshabilitar pintura
+// =======================
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+
+  // Verificar acceso al componente de pinturas
+  if (!session || !(await hasPermission(session, 24))) {
+    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  try {
+    const { habilitada } = await req.json();
+
+    await pool.query(
+      "UPDATE Pintura SET habilitada = ? WHERE id_pintura = ?",
+      [habilitada ? 1 : 0, id]
+    );
+
+    return NextResponse.json({ ok: true });
+
+  } catch (error) {
+    console.error("Error PATCH pintura:", error);
+    return NextResponse.json({ error: "Error al actualizar estado" }, { status: 500 });
+  }
+}
+
+// =======================
+// DELETE
+// =======================
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -127,6 +161,23 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    // Verificar si la pintura está siendo usada en piezas pintadas
+    const [piezasUsando] = await pool.query<RowDataPacket[]>(
+      "SELECT COUNT(*) as total FROM PiezaPintada WHERE id_pintura = ?",
+      [id]
+    );
+
+    const totalPiezas = piezasUsando[0]?.total || 0;
+
+    if (totalPiezas > 0) {
+      return NextResponse.json(
+        { 
+          error: `No se puede eliminar la pintura porque está siendo usada en ${totalPiezas} lote(s) de piezas pintadas. Primero debe eliminar esas piezas pintadas.` 
+        },
+        { status: 400 }
+      );
+    }
+
     await pool.query("DELETE FROM Pintura WHERE id_pintura = ?", [id]);
     return NextResponse.json({ ok: true });
 

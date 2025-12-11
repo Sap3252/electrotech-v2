@@ -337,13 +337,12 @@ export async function POST(req: Request) {
       });
 
       // 8) Guardar alertas en la base de datos
-      // Nota: La tabla alertasmaquinaria tiene estructura: id, id_maquinaria, fecha, mensaje
-      // Combinamos la información del alert en el mensaje
+      // Tabla alertasmaquinaria: id_alerta, tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, leida, fecha
       for (const alerta of alertas) {
         await conn.query(
-          `INSERT INTO alertasmaquinaria (id_maquinaria, fecha, mensaje)
-           VALUES (?, NOW(), ?)`,
-          [alerta.id_equipo, `[${alerta.nivel.toUpperCase()}] [${alerta.tipo_equipo}] ${alerta.mensaje}`]
+          `INSERT INTO alertasmaquinaria (tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, leida, fecha)
+           VALUES (?, ?, ?, ?, ?, 0, NOW())`,
+          [alerta.tipo_equipo, alerta.id_equipo, alerta.tipo_alerta, alerta.mensaje, alerta.nivel]
         );
       }
 

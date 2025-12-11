@@ -22,9 +22,13 @@ export async function GET(req: Request) {
         p.detalle AS descripcion,
         pp.cantidad,
         pp.cantidad_facturada,
-        (pp.cantidad - pp.cantidad_facturada) AS disponible
+        (pp.cantidad - pp.cantidad_facturada) AS disponible,
+        pp.consumo_estimado_kg,
+        pi.precio_unitario AS precio_kg_pintura,
+        ROUND((pp.consumo_estimado_kg / pp.cantidad) * pi.precio_unitario * 1.30, 2) AS precio_recomendado
       FROM PiezaPintada pp
-      JOIN Pieza p ON p.id_pieza = pp.id_pieza`;
+      JOIN Pieza p ON p.id_pieza = pp.id_pieza
+      JOIN Pintura pi ON pi.id_pintura = pp.id_pintura`;
     
     const params: string[] = [];
     

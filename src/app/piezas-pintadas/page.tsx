@@ -133,7 +133,7 @@ function PiezasPintadasPage() {
       try {
         const [piezasRes, pinturasRes, lotesRes, cabinasRes] = await Promise.all([
           fetch("/api/piezas/disponibles"),
-          fetch("/api/pinturas"),
+          fetch("/api/pinturas?habilitadas=true"),
           fetch("/api/piezas-pintadas"),
           fetch("/api/cabinas/disponibles"),
         ]);

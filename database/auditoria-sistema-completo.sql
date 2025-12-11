@@ -35,7 +35,7 @@ CREATE TABLE AuditoriaTrazabilidad (
     id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
     tabla_afectada VARCHAR(100) NOT NULL,
     id_registro INT NOT NULL,
-    accion ENUM('INSERT','UPDATE','DELETE') NOT NULL,
+    accion ENUM('INSERT','UPDATE','DELETE','FACTURADO') NOT NULL,
     datos_anteriores JSON,
     datos_nuevos JSON,
     usuario_sistema VARCHAR(100),

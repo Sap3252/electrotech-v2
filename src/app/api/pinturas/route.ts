@@ -6,7 +6,7 @@ import { ResultSetHeader } from "mysql2";
 // =====================
 // Obtener pinturas
 // =====================
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getSession();
 
   // Verificar acceso al componente Tabla Listado Pinturas (ID 6)
@@ -15,11 +15,15 @@ export async function GET() {
   }
 
   try {
-    const [rows] = await pool.query(`
+    const { searchParams } = new URL(req.url);
+    const soloHabilitadas = searchParams.get("habilitadas") === "true";
+
+    let query = `
       SELECT 
         p.id_pintura,
         p.cantidad_kg,
         p.precio_unitario,
+        p.habilitada,
         m.id_marca,
         m.nombre AS marca,
         t.id_tipo,
@@ -33,8 +37,15 @@ export async function GET() {
       JOIN TipoPintura t ON t.id_tipo = p.id_tipo
       JOIN Color c ON c.id_color = p.id_color
       JOIN Proveedor pr ON pr.id_proveedor = p.id_proveedor
-      ORDER BY p.id_pintura DESC
-    `);
+    `;
+
+    if (soloHabilitadas) {
+      query += " WHERE p.habilitada = 1";
+    }
+
+    query += " ORDER BY p.id_pintura DESC";
+
+    const [rows] = await pool.query(query);
 
     return NextResponse.json(rows);
   } catch (err) {

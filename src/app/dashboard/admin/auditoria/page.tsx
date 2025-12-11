@@ -51,7 +51,7 @@ type AuditoriaRecord = {
   id_auditoria: number;
   tabla_afectada: string;
   id_registro: number;
-  accion: "INSERT" | "UPDATE" | "DELETE";
+  accion: "INSERT" | "UPDATE" | "DELETE" | "FACTURADO";
   datos_anteriores: Record<string, unknown> | null;
   datos_nuevos: Record<string, unknown> | null;
   usuario_sistema: string;
@@ -115,6 +115,7 @@ const ACCION_COLORS: Record<string, string> = {
   INSERT: "#22c55e",
   UPDATE: "#f59e0b", 
   DELETE: "#ef4444",
+  FACTURADO: "#8b5cf6",
 };
 
 export default function AuditoriaPage() {
@@ -296,6 +297,8 @@ export default function AuditoriaPage() {
         return <Badge className="bg-yellow-500 hover:bg-yellow-600">MODIFICAR</Badge>;
       case "DELETE":
         return <Badge className="bg-red-500 hover:bg-red-600">ELIMINAR</Badge>;
+      case "FACTURADO":
+        return <Badge className="bg-purple-500 hover:bg-purple-600">FACTURADO</Badge>;
       default:
         return <Badge>{accion}</Badge>;
     }
@@ -334,6 +337,23 @@ export default function AuditoriaPage() {
       cantidad_lote: d.cantidad_lote != null ? String(d.cantidad_lote) : null,
       cantidad_facturada: d.cantidad_facturada != null ? String(d.cantidad_facturada) : null,
       cantidad_eliminada: d.cantidad_eliminada != null ? String(d.cantidad_eliminada) : null,
+    };
+  };
+
+  // Helper para obtener datos de registros facturados
+  const getDatosFacturados = (record: AuditoriaRecord | null) => {
+    if (!record?.datos_nuevos) return null;
+    const d = record.datos_nuevos as Record<string, unknown>;
+    return {
+      id_factura: d.id_factura != null ? String(d.id_factura) : null,
+      id_pieza_pintada: d.id_pieza_pintada != null ? String(d.id_pieza_pintada) : null,
+      pieza_nombre: d.pieza_nombre != null ? String(d.pieza_nombre) : null,
+      pintura_nombre: d.pintura_nombre != null ? String(d.pintura_nombre) : null,
+      cantidad_facturada: d.cantidad_facturada != null ? String(d.cantidad_facturada) : null,
+      precio_unitario: d.precio_unitario != null ? Number(d.precio_unitario).toFixed(2) : null,
+      subtotal: d.subtotal != null ? Number(d.subtotal).toFixed(2) : null,
+      cantidad_total_lote: d.cantidad_total_lote != null ? String(d.cantidad_total_lote) : null,
+      cantidad_facturada_acumulada: d.cantidad_facturada_acumulada != null ? String(d.cantidad_facturada_acumulada) : null,
     };
   };
 
@@ -592,23 +612,26 @@ export default function AuditoriaPage() {
                       <SelectItem value="INSERT">Crear</SelectItem>
                       <SelectItem value="UPDATE">Modificar</SelectItem>
                       <SelectItem value="DELETE">Eliminar</SelectItem>
+                      <SelectItem value="FACTURADO">Facturado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div>
+                <div className="w-full">
                   <Label>Lote (ID - Pieza - Pintura)</Label>
-                  <Combobox
-                    options={lotes.map((lote): ComboboxOption => ({
-                      value: String(lote.id_pieza_pintada),
-                      label: `#${lote.id_pieza_pintada} - ${lote.pieza_nombre} - ${lote.pintura_nombre}`
-                    }))}
-                    value={loteSeleccionado}
-                    onValueChange={setLoteSeleccionado}
-                    placeholder="Seleccionar lote..."
-                    searchPlaceholder="Buscar por ID, pieza o pintura..."
-                    emptyText="No se encontraron lotes."
-                  />
+                  <div className="w-full max-w-2xl">
+                    <Combobox
+                      options={lotes.map((lote): ComboboxOption => ({
+                        value: String(lote.id_pieza_pintada),
+                        label: `#${lote.id_pieza_pintada} - ${lote.pieza_nombre} - ${lote.pintura_nombre}`
+                      }))}
+                      value={loteSeleccionado}
+                      onValueChange={setLoteSeleccionado}
+                      placeholder="Seleccionar lote..."
+                      searchPlaceholder="Buscar por ID, pieza o pintura..."
+                      emptyText="No se encontraron lotes."
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -648,7 +671,7 @@ export default function AuditoriaPage() {
           </Card>
 
           {/* Estadísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-center">{total}</div>
@@ -677,6 +700,14 @@ export default function AuditoriaPage() {
                   {records.filter(r => r.accion === "DELETE").length}
                 </div>
                 <p className="text-center text-gray-500">Eliminaciones (página)</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-2xl font-bold text-center text-purple-600">
+                  {records.filter(r => r.accion === "FACTURADO").length}
+                </div>
+                <p className="text-center text-gray-500">Facturados (página)</p>
               </CardContent>
             </Card>
           </div>
@@ -864,7 +895,7 @@ export default function AuditoriaPage() {
                       <PieChart>
                         <Pie
                           data={reportesData.trazabilidad.porTipo.map(item => ({
-                            name: item.accion === 'INSERT' ? 'CREAR' : item.accion === 'UPDATE' ? 'MODIFICAR' : 'ELIMINAR',
+                            name: item.accion === 'INSERT' ? 'CREAR' : item.accion === 'UPDATE' ? 'MODIFICAR' : item.accion === 'DELETE' ? 'ELIMINAR' : 'FACTURADO',
                             value: item.cantidad,
                             accion: item.accion
                           }))}
@@ -1088,22 +1119,11 @@ export default function AuditoriaPage() {
 
       {/* Modal de detalles (Trazabilidad) */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto print:max-w-full print:max-h-full print:overflow-visible" id="detalle-auditoria">
-          <DialogHeader className="print:mb-4">
-            <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl">
-                Detalle de Auditoría #{selectedRecord?.id_auditoria}
-              </DialogTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.print()}
-                className="print:hidden flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                Imprimir
-              </Button>
-            </div>
+        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              Detalle de Auditoría #{selectedRecord?.id_auditoria}
+            </DialogTitle>
           </DialogHeader>
 
           {selectedRecord && (
@@ -1409,194 +1429,82 @@ export default function AuditoriaPage() {
                   </Card>
                 );
               })()}
+
+              {/* Datos del registro facturado (para FACTURADO) */}
+              {selectedRecord.datos_nuevos && selectedRecord.accion === "FACTURADO" && (() => {
+                const datos = getDatosFacturados(selectedRecord);
+                if (!datos) return null;
+                return (
+                  <Card className="border-l-4 border-l-purple-500">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-purple-700 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        Datos de Facturación
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {datos.id_factura && (
+                          <div className="bg-purple-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">N° Factura</Label>
+                            <p className="font-bold text-lg text-purple-700">#{datos.id_factura}</p>
+                          </div>
+                        )}
+                        {datos.id_pieza_pintada && (
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">ID Lote</Label>
+                            <p className="font-medium text-base">#{datos.id_pieza_pintada}</p>
+                          </div>
+                        )}
+                        {datos.pieza_nombre && (
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Pieza</Label>
+                            <p className="font-medium text-base break-words">{datos.pieza_nombre}</p>
+                          </div>
+                        )}
+                        {datos.pintura_nombre && (
+                          <div className="bg-orange-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Pintura</Label>
+                            <p className="font-medium text-base break-words">{datos.pintura_nombre}</p>
+                          </div>
+                        )}
+                        {datos.cantidad_facturada && (
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Facturada</Label>
+                            <p className="font-bold text-lg text-green-700">{datos.cantidad_facturada} unidades</p>
+                          </div>
+                        )}
+                        {datos.precio_unitario && (
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Precio Unitario</Label>
+                            <p className="font-medium text-base">${datos.precio_unitario}</p>
+                          </div>
+                        )}
+                        {datos.subtotal && (
+                          <div className="bg-purple-100 p-4 rounded-lg border border-purple-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Subtotal</Label>
+                            <p className="font-bold text-lg text-purple-700">${datos.subtotal}</p>
+                          </div>
+                        )}
+                        {datos.cantidad_total_lote && (
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Total del Lote</Label>
+                            <p className="font-medium text-base">{datos.cantidad_total_lote} unidades</p>
+                          </div>
+                        )}
+                        {datos.cantidad_facturada_acumulada && (
+                          <div className="bg-green-100 p-4 rounded-lg border border-green-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Total Facturado del Lote</Label>
+                            <p className="font-medium text-base text-green-700">{datos.cantidad_facturada_acumulada} unidades</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Estilos de impresión */}
-      <style jsx global>{`
-        @media print {
-          /* Ocultar todo excepto el contenido del modal */
-          body * {
-            visibility: hidden;
-          }
-          
-          /* Ocultar elementos de navegación y overlay */
-          nav, header, aside, footer,
-          [data-slot="dialog-overlay"],
-          [data-slot="dialog-close"],
-          .print\\:hidden {
-            display: none !important;
-          }
-          
-          /* Mostrar solo el contenido del detalle */
-          #detalle-auditoria,
-          #detalle-auditoria * {
-            visibility: visible;
-          }
-          
-          #detalle-auditoria {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            height: auto !important;
-            max-height: none !important;
-            overflow: visible !important;
-            padding: 15px !important;
-            margin: 0 !important;
-            transform: none !important;
-            background: white !important;
-            border: none !important;
-            box-shadow: none !important;
-          }
-          
-          /* Forzar layout vertical en todos los grids */
-          #detalle-auditoria .grid {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-          }
-          
-          #detalle-auditoria .grid > * {
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          
-          /* Tarjetas más compactas */
-          #detalle-auditoria [class*="Card"],
-          #detalle-auditoria [class*="card"] {
-            break-inside: avoid;
-            page-break-inside: avoid;
-            border: 1px solid #d1d5db !important;
-            box-shadow: none !important;
-            margin-bottom: 8px !important;
-          }
-          
-          #detalle-auditoria [class*="CardContent"] {
-            padding: 10px !important;
-          }
-          
-          /* Espaciado reducido */
-          #detalle-auditoria .space-y-6 > * {
-            margin-top: 12px !important;
-          }
-          
-          #detalle-auditoria .space-y-6 > *:first-child {
-            margin-top: 0 !important;
-          }
-          
-          /* Items dentro de grids en línea para ahorrar espacio */
-          #detalle-auditoria .bg-gray-50,
-          #detalle-auditoria .bg-green-50,
-          #detalle-auditoria .bg-red-50 {
-            padding: 8px !important;
-            min-height: auto !important;
-          }
-          
-          /* Tablas legibles */
-          #detalle-auditoria table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-          }
-          
-          #detalle-auditoria th,
-          #detalle-auditoria td {
-            border: 1px solid #d1d5db !important;
-            padding: 6px 8px !important;
-            font-size: 11px !important;
-            text-align: left !important;
-          }
-          
-          #detalle-auditoria th {
-            background-color: #f3f4f6 !important;
-            font-weight: 600 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          /* Colores de fondo para impresión */
-          #detalle-auditoria .bg-green-100,
-          #detalle-auditoria .bg-green-50 {
-            background-color: #dcfce7 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          #detalle-auditoria .bg-red-100,
-          #detalle-auditoria .bg-red-50 {
-            background-color: #fee2e2 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          #detalle-auditoria .bg-yellow-100,
-          #detalle-auditoria .bg-yellow-50 {
-            background-color: #fef9c3 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          #detalle-auditoria .bg-blue-100,
-          #detalle-auditoria .bg-blue-50 {
-            background-color: #dbeafe !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          #detalle-auditoria .bg-gray-50 {
-            background-color: #f9fafb !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          /* Bordes de tarjetas con color */
-          #detalle-auditoria .border-l-blue-500 {
-            border-left: 4px solid #3b82f6 !important;
-          }
-          
-          #detalle-auditoria .border-l-green-500 {
-            border-left: 4px solid #22c55e !important;
-          }
-          
-          #detalle-auditoria .border-l-yellow-500 {
-            border-left: 4px solid #eab308 !important;
-          }
-          
-          #detalle-auditoria .border-l-red-500 {
-            border-left: 4px solid #ef4444 !important;
-          }
-          
-          /* Títulos más pequeños */
-          #detalle-auditoria h3 {
-            font-size: 13px !important;
-            margin-bottom: 8px !important;
-          }
-          
-          #detalle-auditoria [class*="DialogTitle"] {
-            font-size: 16px !important;
-            margin-bottom: 10px !important;
-          }
-          
-          /* Labels y textos */
-          #detalle-auditoria label,
-          #detalle-auditoria .text-xs {
-            font-size: 10px !important;
-          }
-          
-          #detalle-auditoria p {
-            font-size: 12px !important;
-          }
-          
-          /* Página configuración vertical */
-          @page {
-            size: A4 portrait;
-            margin: 10mm;
-          }
-        }
-      `}</style>
     </div>
   );
 }

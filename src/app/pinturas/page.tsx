@@ -145,6 +145,27 @@ function PinturasPage() {
     const res = await fetch(`/api/pinturas/${id}`, { method: "DELETE" });
     if (res.ok) {
       await cargarPinturas();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Error al eliminar la pintura");
+    }
+  };
+
+  const cambiarEstadoPintura = async (id: number, habilitada: boolean) => {
+    const accion = habilitada ? "deshabilitar" : "habilitar";
+    if (!confirm(`¿Está seguro de ${accion} esta pintura?`)) return;
+
+    const res = await fetch(`/api/pinturas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ habilitada: !habilitada })
+    });
+
+    if (res.ok) {
+      await cargarPinturas();
+    } else {
+      const data = await res.json();
+      alert(data.error || `Error al ${accion} la pintura`);
     }
   };
   
@@ -340,6 +361,7 @@ function PinturasPage() {
                   <th className="text-left p-2">Proveedor</th>
                   <th className="text-left p-2">Precio</th>
                   <th className="text-left p-2">Cantidad (kg)</th>
+                  <th className="text-left p-2">Estado</th>
                   <th className="text-left p-2">Acciones</th>
                 </tr>
               </thead>
@@ -361,6 +383,11 @@ function PinturasPage() {
                       <td className="p-2">${p.precio_unitario}</td>
                       <td className="p-2">{p.cantidad_kg} kg</td>
                       <td className="p-2">
+                        <span className={`px-2 py-1 rounded text-xs ${p.habilitada ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {p.habilitada ? 'Habilitada' : 'Deshabilitada'}
+                        </span>
+                      </td>
+                      <td className="p-2">
                         <div className="flex gap-2">
                           <ProtectedComponent componenteId={24}>
                             <Button
@@ -369,6 +396,15 @@ function PinturasPage() {
                               onClick={() => editarPintura(p)}
                             >
                               Editar
+                            </Button>
+                          </ProtectedComponent>
+                          <ProtectedComponent componenteId={24}>
+                            <Button
+                              size="sm"
+                              variant={p.habilitada ? "secondary" : "default"}
+                              onClick={() => cambiarEstadoPintura(p.id_pintura, p.habilitada)}
+                            >
+                              {p.habilitada ? 'Deshabilitar' : 'Habilitar'}
                             </Button>
                           </ProtectedComponent>
                           <ProtectedComponent componenteId={7}>

@@ -21,6 +21,7 @@ export async function GET() {
       FROM Pieza p
       LEFT JOIN StockPieza sp ON sp.id_pieza = p.id_pieza
       WHERE COALESCE(sp.stock_disponible, 0) > 0
+        AND p.habilitada = 1
       ORDER BY p.id_pieza DESC
     `);
 

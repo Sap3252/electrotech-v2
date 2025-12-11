@@ -22,6 +22,7 @@ interface PiezaDisponible {
   descripcion: string;
   cantidad: number;
   cantidad_facturada: number;
+  precio_recomendado?: number;
 }
 
 interface Factura {
@@ -215,6 +216,7 @@ function FacturacionPage() {
                   setForm({ ...form, id_cliente: v });
                   setItems([]);
                   setSelectedPieza(null);
+                  setPrecioUnitario(0);
                   await cargarPiezasCliente(v);
                 }}
                 options={clientes.map((c) => ({
@@ -238,6 +240,10 @@ function FacturacionPage() {
                   onValueChange={(v) => {
                     const p = piezasFiltradas.find((x) => x.id_pieza_pintada == Number(v));
                     setSelectedPieza(p || null);
+                    // Prellenar el precio recomendado si existe
+                    if (p?.precio_recomendado) {
+                      setPrecioUnitario(p.precio_recomendado);
+                    }
                   }}
                   disabled={!form.id_cliente}
                   options={piezasFiltradas.map((p) => ({
@@ -291,6 +297,12 @@ function FacturacionPage() {
                 />
                 {erroresItem.precio && (
                   <p className="text-sm text-red-600 mt-1">{erroresItem.precio}</p>
+                )}
+                {selectedPieza?.precio_recomendado && (
+                  <p className="text-sm text-green-600 mt-1">
+                    Precio recomendado: ${Number(selectedPieza.precio_recomendado).toFixed(2)} 
+                    <span className="text-gray-500 text-xs ml-1">(costo pintura + 30%)</span>
+                  </p>
                 )}
               </div>
             </div>
