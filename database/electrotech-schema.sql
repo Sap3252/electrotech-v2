@@ -263,7 +263,7 @@ CREATE TABLE `piezapintada` (
   `id_pintura` INT NOT NULL,
   `cantidad` INT NOT NULL,
   `cantidad_facturada` INT NOT NULL DEFAULT 0,
-  `fecha` DATE NOT NULL DEFAULT (CURDATE()),
+  `fecha` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `consumo_estimado_kg` DECIMAL(10,3) NOT NULL,
   PRIMARY KEY (`id_pieza_pintada`),
   KEY `id_pieza` (`id_pieza`),

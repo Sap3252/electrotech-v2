@@ -192,7 +192,14 @@ export async function DELETE(
       });
     } else {
       // MODIFICACIÓN DEL LOTE (eliminación parcial)
-      // Datos para UPDATE: fecha, pieza, cabina, pintura, consumo, cantidad lote, facturadas, pendientes restantes, eliminadas
+      // Datos ANTERIORES (antes de la modificación)
+      const datosAnteriores = JSON.stringify({
+        cantidad_lote: registro.cantidad,
+        consumo_estimado_kg: Number(registro.consumo_estimado_kg).toFixed(4),
+        cantidad_facturada: registro.cantidad_facturada
+      });
+
+      // Datos NUEVOS (después de la modificación)
       const datosModificacion = JSON.stringify({
         fecha: registro.fecha,
         pieza_nombre: registro.pieza_nombre || 'N/A',
@@ -207,9 +214,9 @@ export async function DELETE(
 
       await pool.query(
         `INSERT INTO AuditoriaTrazabilidad 
-         (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
-         VALUES ('PiezaPintada', ?, 'UPDATE', ?, 'app_user', ?)`,
-        [idNum, datosModificacion, session.id_usuario]
+         (tabla_afectada, id_registro, accion, datos_anteriores, datos_nuevos, usuario_sistema, id_usuario)
+         VALUES ('PiezaPintada', ?, 'UPDATE', ?, ?, 'app_user', ?)`,
+        [idNum, datosAnteriores, datosModificacion, session.id_usuario]
       );
 
       await pool.query(

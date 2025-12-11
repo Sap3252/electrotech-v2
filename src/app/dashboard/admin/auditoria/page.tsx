@@ -1194,6 +1194,9 @@ export default function AuditoriaPage() {
               {selectedRecord.accion === "UPDATE" && selectedRecord.datos_nuevos && 
                !!(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (() => {
                 const datos = getDatosNuevos(selectedRecord);
+                const datosAnteriores = selectedRecord.datos_anteriores as Record<string, unknown> | null;
+                const cantidadAnterior = datosAnteriores?.cantidad_lote;
+                
                 if (!datos) return null;
                 return (
                   <Card className="border-l-4 border-l-amber-500">
@@ -1233,10 +1236,16 @@ export default function AuditoriaPage() {
                             <p className="font-medium text-base">{datos.consumo_estimado_kg} kg</p>
                           </div>
                         )}
+                        {cantidadAnterior !== undefined && (
+                          <div className="bg-red-50 p-4 rounded-lg border border-red-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote Anterior</Label>
+                            <p className="font-bold text-xl text-red-700">{cantidadAnterior} unidades</p>
+                          </div>
+                        )}
                         {datos.cantidad_lote && (
-                          <div className="bg-slate-100 p-4 rounded-lg">
-                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote Actual</Label>
-                            <p className="font-medium text-lg">{datos.cantidad_lote} unidades</p>
+                          <div className="bg-green-50 p-4 rounded-lg border border-green-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote Nueva</Label>
+                            <p className="font-bold text-xl text-green-700">{datos.cantidad_lote} unidades</p>
                           </div>
                         )}
                         {datos.cantidad_facturada && (
@@ -1271,11 +1280,43 @@ export default function AuditoriaPage() {
 
               {/* Para UPDATE normal mostrar campos cambiados (no eliminación parcial) */}
               {selectedRecord.accion === "UPDATE" && selectedRecord.datos_anteriores && selectedRecord.datos_nuevos &&
-               !(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (
-                <Card className="border-l-4 border-l-yellow-500">
-                  <CardContent className="pt-4">
-                    <h3 className="font-semibold text-yellow-700 mb-3">Campos Modificados</h3>
-                    <Table>
+               !(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (() => {
+                const datosAnteriores = selectedRecord.datos_anteriores as Record<string, unknown>;
+                const datosNuevos = selectedRecord.datos_nuevos as Record<string, unknown>;
+                
+                const cantidadAnterior = datosAnteriores.cantidad_lote;
+                const cantidadNueva = datosNuevos.cantidad_lote;
+                
+                return (
+                  <>
+                    {/* Mostrar cantidades del lote */}
+                    <Card className="border-l-4 border-l-blue-500">
+                      <CardContent className="pt-4">
+                        <h3 className="font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                          Cantidad del Lote
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Anterior</Label>
+                            <p className="font-bold text-2xl text-red-700">
+                              {cantidadAnterior !== undefined ? `${cantidadAnterior} unidades` : 'No disponible'}
+                            </p>
+                          </div>
+                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Nueva</Label>
+                            <p className="font-bold text-2xl text-green-700">
+                              {cantidadNueva !== undefined ? `${cantidadNueva} unidades` : 'No disponible'}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="border-l-4 border-l-yellow-500">
+                      <CardContent className="pt-4">
+                        <h3 className="font-semibold text-yellow-700 mb-3">Campos Modificados</h3>
+                        <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Campo</TableHead>
@@ -1302,7 +1343,9 @@ export default function AuditoriaPage() {
                     </Table>
                   </CardContent>
                 </Card>
-              )}
+                  </>
+                );
+              })()}
 
               {/* Datos Nuevos - Diseño bonito con tarjetas */}
               {selectedRecord.datos_nuevos && selectedRecord.accion === "INSERT" && (() => {
