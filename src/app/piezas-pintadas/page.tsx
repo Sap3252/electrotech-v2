@@ -12,6 +12,16 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import ProtectedPage from "@/components/ProtectedPage";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { formatearFecha } from "@/lib/utils";
@@ -51,8 +61,11 @@ type PiezaPintadaRow = {
   id_pieza_pintada: number;
   fecha: string;
   cantidad: number;
+  cantidad_facturada: number;
+  cantidad_pendiente: number;
   consumo_estimado_kg: number;
   pieza_detalle: string;
+  cliente_nombre: string;
   marca: string;
   color: string;
   tipo: string;
@@ -104,6 +117,13 @@ function PiezasPintadasPage() {
     pistolas: string[];
     hornos: string[];
   } | null>(null);
+
+  // Estados para modal de eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PiezaPintadaRow | null>(null);
+  const [deleteCantidad, setDeleteCantidad] = useState<number>(0);
+  const [deleteOption, setDeleteOption] = useState<"todas" | "parcial">("todas");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [mensajeError, setMensajeError] = useState<string>("");
 
@@ -241,14 +261,39 @@ function PiezasPintadasPage() {
     }
   };
 
-const eliminarPiezaPintada = async (id: number) => {
-    if (!confirm("¿Estás seguro de eliminar este registro de producción?")) {
+  // Abrir modal de eliminación
+  const abrirModalEliminar = (lote: PiezaPintadaRow) => {
+    setDeleteTarget(lote);
+    setDeleteCantidad(lote.cantidad_pendiente);
+    setDeleteOption("todas");
+    setShowDeleteModal(true);
+  };
+
+  // Ejecutar eliminación
+  const ejecutarEliminacion = async () => {
+    if (!deleteTarget) return;
+
+    const cantidadAEliminar = deleteOption === "todas" 
+      ? deleteTarget.cantidad_pendiente 
+      : deleteCantidad;
+
+    if (cantidadAEliminar <= 0) {
+      alert("La cantidad a eliminar debe ser mayor a 0");
       return;
     }
 
+    if (cantidadAEliminar > deleteTarget.cantidad_pendiente) {
+      alert(`Solo hay ${deleteTarget.cantidad_pendiente} piezas pendientes disponibles para eliminar`);
+      return;
+    }
+
+    setDeleteLoading(true);
+
     try {
-      const res = await fetch(`/api/piezas-pintadas/${id}`, {
+      const res = await fetch(`/api/piezas-pintadas/${deleteTarget.id_pieza_pintada}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cantidad: cantidadAEliminar }),
       });
 
       if (!res.ok) {
@@ -257,9 +302,13 @@ const eliminarPiezaPintada = async (id: number) => {
         return;
       }
 
-      alert("Registro eliminado correctamente");
+      const result = await res.json();
+      alert(result.message || "Piezas eliminadas correctamente");
 
-      // Recargar tabla y piezas disponibles
+      // Cerrar modal y recargar datos
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
+
       const [lotesRes, piezasRes] = await Promise.all([
         fetch("/api/piezas-pintadas"),
         fetch("/api/piezas/disponibles"),
@@ -271,6 +320,8 @@ const eliminarPiezaPintada = async (id: number) => {
     } catch (err) {
       console.error("Error al eliminar:", err);
       alert("Error al eliminar el registro");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -531,6 +582,16 @@ const eliminarPiezaPintada = async (id: number) => {
           <Card>
             <CardHeader>
               <CardTitle>Historial de producción</CardTitle>
+              <div className="flex gap-4 text-sm mt-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-gray-600">Facturadas</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-gray-600">Pendientes</span>
+                </div>
+              </div>
             </CardHeader>
           <CardContent>
             {lotes.length === 0 ? (
@@ -541,15 +602,15 @@ const eliminarPiezaPintada = async (id: number) => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-1">Fecha</th>
-                          <th className="text-left py-1">Pieza</th>
-                          <th className="text-left py-1">Cliente</th>
-                      <th className="text-left py-1">Pintura</th>
-                      <th className="text-left py-1">Cabina</th>
-                      <th className="text-right py-1">Cant.</th>
-                      <th className="text-right py-1">Consumo (kg)</th>
-                      <th className="text-right py-1">Acciones</th>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left py-2 px-2">Fecha</th>
+                      <th className="text-left py-2 px-2">Pieza</th>
+                      <th className="text-left py-2 px-2">Cliente</th>
+                      <th className="text-left py-2 px-2">Pintura</th>
+                      <th className="text-left py-2 px-2">Cabina</th>
+                      <th className="text-center py-2 px-2">Estado del Lote</th>
+                      <th className="text-right py-2 px-2">Consumo</th>
+                      <th className="text-right py-2 px-2">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -560,32 +621,72 @@ const eliminarPiezaPintada = async (id: number) => {
                           const start = (page - 1) * pageSize;
                           const visibles = lotes.slice(start, start + pageSize);
 
-                          return visibles.map((l) => (
-                            <tr key={l.id_pieza_pintada} className="border-b">
-                              <td className="py-1">{formatearFecha(l.fecha)}</td>
-                              <td className="py-1">{l.pieza_detalle}</td>
-                              <td className="py-1">{(l as any).cliente_nombre || "-"}</td>
-                              <td className="py-1">
-                                {l.marca} / {l.color} / {l.tipo}
-                              </td>
-                              <td className="py-1">{l.cabina_nombre || "-"}</td>
-                              <td className="py-1 text-right">{l.cantidad}</td>
-                              <td className="py-1 text-right">
-                                {l.consumo_estimado_kg} kg
-                              </td>
-                              <td className="py-1 text-right">
-                                <ProtectedComponent componenteId={23}>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => eliminarPiezaPintada(l.id_pieza_pintada)}
-                                  >
-                                    Eliminar
-                                  </Button>
-                                </ProtectedComponent>
-                              </td>
-                            </tr>
-                          ));
+                          return visibles.map((l) => {
+                            const todoFacturado = l.cantidad_facturada === l.cantidad;
+                            const nadaFacturado = l.cantidad_facturada === 0;
+                            const parcial = !todoFacturado && !nadaFacturado;
+
+                            return (
+                              <tr 
+                                key={l.id_pieza_pintada} 
+                                className={`border-b hover:bg-gray-50 ${todoFacturado ? 'bg-green-50' : ''}`}
+                              >
+                                <td className="py-2 px-2">{formatearFecha(l.fecha)}</td>
+                                <td className="py-2 px-2 font-medium">{l.pieza_detalle}</td>
+                                <td className="py-2 px-2">{l.cliente_nombre || "-"}</td>
+                                <td className="py-2 px-2">
+                                  <span className="text-gray-600">{l.marca} / {l.color} / {l.tipo}</span>
+                                </td>
+                                <td className="py-2 px-2">{l.cabina_nombre || "-"}</td>
+                                <td className="py-2 px-2">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <div className="flex gap-2 text-xs">
+                                      {l.cantidad_facturada > 0 && (
+                                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                          {l.cantidad_facturada} facturadas
+                                        </Badge>
+                                      )}
+                                      {l.cantidad_pendiente > 0 && (
+                                        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                                          {l.cantidad_pendiente} pendientes
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    {/* Barra visual */}
+                                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-green-500 transition-all"
+                                        style={{ width: `${(l.cantidad_facturada / l.cantidad) * 100}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {l.cantidad_facturada}/{l.cantidad} total
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-2 px-2 text-right">
+                                  {l.consumo_estimado_kg} kg
+                                </td>
+                                <td className="py-2 px-2 text-right">
+                                  {l.cantidad_pendiente > 0 ? (
+                                    <ProtectedComponent componenteId={23}>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => abrirModalEliminar(l)}
+                                      >
+                                        Eliminar
+                                      </Button>
+                                    </ProtectedComponent>
+                                  ) : (
+                                    <span className="text-xs text-gray-400 italic">
+                                      100% facturado
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          });
                         })()}
                   </tbody>
                 </table>
@@ -628,6 +729,122 @@ const eliminarPiezaPintada = async (id: number) => {
         </Card>
         </ProtectedComponent>
       </div>
+
+      {/* MODAL DE ELIMINACIÓN */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar Piezas del Lote</DialogTitle>
+          </DialogHeader>
+
+          {deleteTarget && (
+            <div className="space-y-4">
+              {/* Info del lote */}
+              <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                <p><strong>Pieza:</strong> {deleteTarget.pieza_detalle}</p>
+                <p><strong>Fecha:</strong> {formatearFecha(deleteTarget.fecha)}</p>
+                <div className="mt-2 flex gap-2">
+                  <Badge className="bg-green-100 text-green-800">
+                    {deleteTarget.cantidad_facturada} facturadas
+                  </Badge>
+                  <Badge className="bg-amber-100 text-amber-800">
+                    {deleteTarget.cantidad_pendiente} pendientes
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Advertencia */}
+              <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-700">
+                <strong>⚠️ Atención:</strong> Solo se pueden eliminar las piezas pendientes (no facturadas).
+                Esta acción no se puede deshacer.
+              </div>
+
+              {/* Opciones */}
+              <div className="space-y-3">
+                <Label>¿Cuántas piezas desea eliminar?</Label>
+                
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id="todas"
+                    name="deleteOption"
+                    checked={deleteOption === "todas"}
+                    onChange={() => setDeleteOption("todas")}
+                  />
+                  <label htmlFor="todas" className="text-sm">
+                    Todas las pendientes ({deleteTarget.cantidad_pendiente} piezas)
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id="parcial"
+                    name="deleteOption"
+                    checked={deleteOption === "parcial"}
+                    onChange={() => setDeleteOption("parcial")}
+                  />
+                  <label htmlFor="parcial" className="text-sm">
+                    Una cantidad específica:
+                  </label>
+                </div>
+
+                {deleteOption === "parcial" && (
+                  <div className="ml-6">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={deleteTarget.cantidad_pendiente}
+                      value={deleteCantidad}
+                      onChange={(e) => setDeleteCantidad(Number(e.target.value))}
+                      className="w-32"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Máximo: {deleteTarget.cantidad_pendiente}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Motivo (opcional) */}
+              <div>
+                <Label className="text-sm text-gray-600">
+                  Motivo de la eliminación (opcional):
+                </Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar motivo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="defecto">Defecto de pintura</SelectItem>
+                    <SelectItem value="dañada">Pieza dañada</SelectItem>
+                    <SelectItem value="error">Error de registro</SelectItem>
+                    <SelectItem value="cliente">Cancelación del cliente</SelectItem>
+                    <SelectItem value="otro">Otro motivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deleteLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={ejecutarEliminacion}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? "Eliminando..." : `Eliminar ${deleteOption === "todas" ? deleteTarget?.cantidad_pendiente : deleteCantidad} piezas`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

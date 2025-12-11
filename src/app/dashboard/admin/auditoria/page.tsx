@@ -295,6 +295,27 @@ export default function AuditoriaPage() {
       pintura_nombre: d.pintura_nombre != null ? String(d.pintura_nombre) : null,
       cantidad_facturada: d.cantidad_facturada != null ? String(d.cantidad_facturada) : null,
       consumo_estimado_kg: d.consumo_estimado_kg != null ? Number(d.consumo_estimado_kg).toFixed(4) : null,
+      // Campos para eliminación (parcial o completa)
+      cantidad_lote: d.cantidad_lote != null ? String(d.cantidad_lote) : null,
+      cantidad_eliminada: d.cantidad_eliminada != null ? String(d.cantidad_eliminada) : null,
+      cantidad_pendiente: d.cantidad_pendiente != null ? String(d.cantidad_pendiente) : null,
+      motivo_eliminacion: d.motivo_eliminacion != null ? String(d.motivo_eliminacion) : null,
+    };
+  };
+
+  // Helper para obtener datos de registros eliminados (DELETE usa datos_nuevos, no datos_anteriores)
+  const getDatosEliminados = (record: AuditoriaRecord | null) => {
+    if (!record?.datos_nuevos) return null;
+    const d = record.datos_nuevos as Record<string, unknown>;
+    return {
+      fecha: d.fecha != null ? String(d.fecha) : null,
+      pieza_nombre: d.pieza_nombre != null ? String(d.pieza_nombre) : null,
+      cabina_nombre: d.cabina_nombre != null ? String(d.cabina_nombre) : null,
+      pintura_nombre: d.pintura_nombre != null ? String(d.pintura_nombre) : null,
+      consumo_estimado_kg: d.consumo_estimado_kg != null ? Number(d.consumo_estimado_kg).toFixed(4) : null,
+      cantidad_lote: d.cantidad_lote != null ? String(d.cantidad_lote) : null,
+      cantidad_facturada: d.cantidad_facturada != null ? String(d.cantidad_facturada) : null,
+      cantidad_eliminada: d.cantidad_eliminada != null ? String(d.cantidad_eliminada) : null,
     };
   };
 
@@ -1116,8 +1137,88 @@ export default function AuditoriaPage() {
                 </Card>
               </div>
 
-              {/* Para UPDATE mostrar campos cambiados */}
-              {selectedRecord.accion === "UPDATE" && selectedRecord.datos_anteriores && selectedRecord.datos_nuevos && (
+              {/* Para UPDATE de eliminación parcial - mostrar tarjetas especiales */}
+              {selectedRecord.accion === "UPDATE" && selectedRecord.datos_nuevos && 
+               !!(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (() => {
+                const datos = getDatosNuevos(selectedRecord);
+                if (!datos) return null;
+                return (
+                  <Card className="border-l-4 border-l-amber-500">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-amber-700 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Eliminación Parcial de Piezas
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {datos.fecha && (
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Fecha</Label>
+                            <p className="font-medium text-base">{datos.fecha}</p>
+                          </div>
+                        )}
+                        {datos.pieza_nombre && (
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Pieza</Label>
+                            <p className="font-medium text-base break-words">{datos.pieza_nombre}</p>
+                          </div>
+                        )}
+                        {datos.cabina_nombre && (
+                          <div className="bg-purple-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cabina</Label>
+                            <p className="font-medium text-base break-words">{datos.cabina_nombre}</p>
+                          </div>
+                        )}
+                        {datos.pintura_nombre && (
+                          <div className="bg-orange-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Pintura</Label>
+                            <p className="font-medium text-base break-words">{datos.pintura_nombre}</p>
+                          </div>
+                        )}
+                        {datos.consumo_estimado_kg && (
+                          <div className="bg-yellow-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Consumo Estimado</Label>
+                            <p className="font-medium text-base">{datos.consumo_estimado_kg} kg</p>
+                          </div>
+                        )}
+                        {datos.cantidad_lote && (
+                          <div className="bg-slate-100 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote Actual</Label>
+                            <p className="font-medium text-lg">{datos.cantidad_lote} unidades</p>
+                          </div>
+                        )}
+                        {datos.cantidad_facturada && (
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Facturada</Label>
+                            <p className="font-medium text-lg text-green-700">{datos.cantidad_facturada} unidades</p>
+                          </div>
+                        )}
+                        {datos.cantidad_pendiente && (
+                          <div className="bg-amber-50 p-4 rounded-lg border border-amber-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Sin Facturar Restante</Label>
+                            <p className="font-medium text-lg text-amber-700">{datos.cantidad_pendiente} unidades</p>
+                          </div>
+                        )}
+                        {datos.cantidad_eliminada && (
+                          <div className="bg-red-100 p-4 rounded-lg border border-red-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Sin Facturar Eliminada</Label>
+                            <p className="font-medium text-lg text-red-700">{datos.cantidad_eliminada} unidades</p>
+                          </div>
+                        )}
+                      </div>
+                      {datos.motivo_eliminacion && (
+                        <div className="mt-4 bg-gray-100 p-4 rounded-lg">
+                          <Label className="text-gray-500 text-xs block mb-1">Motivo de Eliminación</Label>
+                          <p className="font-medium text-base italic">&quot;{datos.motivo_eliminacion}&quot;</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* Para UPDATE normal mostrar campos cambiados (no eliminación parcial) */}
+              {selectedRecord.accion === "UPDATE" && selectedRecord.datos_anteriores && selectedRecord.datos_nuevos &&
+               !(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (
                 <Card className="border-l-4 border-l-yellow-500">
                   <CardContent className="pt-4">
                     <h3 className="font-semibold text-yellow-700 mb-3">Campos Modificados</h3>
@@ -1210,25 +1311,71 @@ export default function AuditoriaPage() {
                 );
               })()}
 
-              {/* Datos anteriores (para DELETE) */}
-              {selectedRecord.datos_anteriores && selectedRecord.accion === "DELETE" && (
-                <Card className="border-l-4 border-l-red-500">
-                  <CardContent className="pt-4">
-                    <h3 className="font-semibold text-red-700 mb-4 flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                      Datos del Registro Eliminado
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(selectedRecord.datos_anteriores).map(([key, value]) => (
-                        <div key={key} className="bg-red-50 p-3 rounded-lg">
-                          <Label className="text-gray-500 text-xs">{key}</Label>
-                          <p className="font-medium">{String(value)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Datos del registro eliminado (para DELETE - usa datos_nuevos) */}
+              {selectedRecord.datos_nuevos && selectedRecord.accion === "DELETE" && (() => {
+                const datos = getDatosEliminados(selectedRecord);
+                if (!datos) return null;
+                return (
+                  <Card className="border-l-4 border-l-red-500">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-red-700 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Datos del Registro Eliminado
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {datos.fecha && (
+                          <div className="bg-red-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Fecha</Label>
+                            <p className="font-medium text-base">{datos.fecha}</p>
+                          </div>
+                        )}
+                        {datos.pieza_nombre && (
+                          <div className="bg-red-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Pieza</Label>
+                            <p className="font-medium text-base break-words">{datos.pieza_nombre}</p>
+                          </div>
+                        )}
+                        {datos.cabina_nombre && (
+                          <div className="bg-red-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cabina</Label>
+                            <p className="font-medium text-base break-words">{datos.cabina_nombre}</p>
+                          </div>
+                        )}
+                        {datos.pintura_nombre && (
+                          <div className="bg-red-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Pintura</Label>
+                            <p className="font-medium text-base break-words">{datos.pintura_nombre}</p>
+                          </div>
+                        )}
+                        {datos.consumo_estimado_kg && (
+                          <div className="bg-orange-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Consumo Estimado</Label>
+                            <p className="font-medium text-base">{datos.consumo_estimado_kg} kg</p>
+                          </div>
+                        )}
+                        {datos.cantidad_lote && (
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote</Label>
+                            <p className="font-medium text-lg">{datos.cantidad_lote} unidades</p>
+                          </div>
+                        )}
+                        {datos.cantidad_facturada && (
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Facturada</Label>
+                            <p className="font-medium text-lg text-green-700">{datos.cantidad_facturada} unidades</p>
+                          </div>
+                        )}
+                        {datos.cantidad_eliminada && (
+                          <div className="bg-red-100 p-4 rounded-lg border border-red-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Sin Facturar Eliminada</Label>
+                            <p className="font-medium text-lg text-red-700">{datos.cantidad_eliminada} unidades</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
             </div>
           )}
         </DialogContent>

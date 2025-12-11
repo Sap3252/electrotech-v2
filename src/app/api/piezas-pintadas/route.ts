@@ -24,6 +24,8 @@ export async function GET() {
         pp.id_pieza_pintada,
         DATE_FORMAT(pp.fecha, '%Y-%m-%d %H:%i:%s') AS fecha,
         pp.cantidad,
+        pp.cantidad_facturada,
+        (pp.cantidad - pp.cantidad_facturada) AS cantidad_pendiente,
         pp.consumo_estimado_kg,
         pp.id_cabina,
         pz.detalle AS pieza_detalle,

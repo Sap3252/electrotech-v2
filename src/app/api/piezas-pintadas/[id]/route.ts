@@ -73,12 +73,22 @@ export async function DELETE(
   const { id } = await params;
   const idNum = Number(id);
 
+  // Obtener cantidad a eliminar del body (si no se envía, elimina todas las pendientes)
+  let cantidadAEliminar: number | null = null;
   try {
-    // Obtener datos completos del registro antes de eliminar (para auditoría)
+    const body = await req.json();
+    cantidadAEliminar = body.cantidad ? Number(body.cantidad) : null;
+  } catch {
+    // Si no hay body, se eliminará todo el registro (si no tiene facturadas)
+  }
+
+  try {
+    // Obtener datos completos del registro antes de modificar/eliminar (para auditoría)
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT pp.*, p.detalle as pieza_nombre, 
               CONCAT(m.nombre, ' - ', c.nombre, ' (', t.nombre, ')') as pintura_nombre,
-              cab.nombre as cabina_nombre
+              cab.nombre as cabina_nombre,
+              (pp.cantidad - pp.cantidad_facturada) as cantidad_pendiente
        FROM PiezaPintada pp
        LEFT JOIN Pieza p ON p.id_pieza = pp.id_pieza
        LEFT JOIN Pintura pin ON pin.id_pintura = pp.id_pintura
@@ -95,56 +105,128 @@ export async function DELETE(
     }
 
     const registro = rows[0];
+    const cantidadPendiente = registro.cantidad - registro.cantidad_facturada;
 
-    // No permitir eliminar si hay piezas facturadas
-    if (registro.cantidad_facturada > 0) {
+    // Validar que hay piezas pendientes para eliminar
+    if (cantidadPendiente <= 0) {
       return NextResponse.json(
-        { 
-          error: `No se puede eliminar: ${registro.cantidad_facturada} de ${registro.cantidad} piezas ya fueron facturadas.` 
-        }, 
+        { error: "No hay piezas pendientes para eliminar. Todas están facturadas." },
         { status: 400 }
       );
     }
 
-    // Verificar si está referenciado en alguna factura (por seguridad adicional)
-    const [facturas] = await pool.query<RowDataPacket[]>(
-      `SELECT COUNT(*) as total FROM facturadetalle WHERE id_pieza_pintada = ?`,
-      [idNum]
-    );
+    // Si no se especifica cantidad, eliminar todas las pendientes
+    const cantidadReal = cantidadAEliminar ?? cantidadPendiente;
 
-    if (facturas[0].total > 0) {
+    // Validar cantidad
+    if (cantidadReal <= 0) {
       return NextResponse.json(
-        { error: "No se puede eliminar: este registro está asociado a una o más facturas." },
+        { error: "La cantidad a eliminar debe ser mayor a 0" },
         { status: 400 }
       );
     }
 
-    // Crear registro de auditoría ANTES de eliminar
-    const datosAnteriores = JSON.stringify({
-      id_pieza_pintada: registro.id_pieza_pintada,
-      fecha: registro.fecha,
-      cantidad: registro.cantidad,
-      pieza_nombre: registro.pieza_nombre || 'N/A',
-      cabina_nombre: registro.cabina_nombre || 'N/A',
-      pintura_nombre: registro.pintura_nombre || 'N/A',
-      cantidad_facturada: registro.cantidad_facturada,
-      consumo_estimado_kg: registro.consumo_estimado_kg
-    });
+    if (cantidadReal > cantidadPendiente) {
+      return NextResponse.json(
+        { error: `Solo hay ${cantidadPendiente} piezas pendientes. No puede eliminar ${cantidadReal}.` },
+        { status: 400 }
+      );
+    }
 
-    await pool.query(
-      `INSERT INTO AuditoriaTrazabilidad 
-       (tabla_afectada, id_registro, accion, datos_anteriores, usuario_sistema, id_usuario)
-       VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
-      [idNum, datosAnteriores, session.id_usuario]
-    );
+    // Calcular nuevo consumo proporcional
+    const consumoPorPieza = registro.consumo_estimado_kg / registro.cantidad;
+    const nuevoConsumo = (registro.cantidad - cantidadReal) * consumoPorPieza;
+    const nuevaCantidad = registro.cantidad - cantidadReal;
+    const nuevaCantidadPendiente = nuevaCantidad - registro.cantidad_facturada;
 
-    // Si no hay piezas facturadas, se puede eliminar
-    await pool.query(
-      `DELETE FROM PiezaPintada WHERE id_pieza_pintada = ?`,
-      [idNum]
-    );
-    
-    return NextResponse.json({ ok: true, message: "Registro eliminado correctamente" });
+    // Si se eliminan todas las piezas pendientes, el lote se considera terminado (DELETE)
+    if (cantidadReal === cantidadPendiente) {
+      // ELIMINACIÓN COMPLETA DEL LOTE (todas las pendientes eliminadas)
+      // Datos para DELETE: fecha, pieza, cabina, pintura, consumo, cantidad lote, facturadas, eliminadas
+      const datosEliminacion = JSON.stringify({
+        fecha: registro.fecha,
+        pieza_nombre: registro.pieza_nombre || 'N/A',
+        cabina_nombre: registro.cabina_nombre || 'N/A',
+        pintura_nombre: registro.pintura_nombre || 'N/A',
+        consumo_estimado_kg: Number(registro.consumo_estimado_kg).toFixed(4),
+        cantidad_lote: registro.cantidad,
+        cantidad_facturada: registro.cantidad_facturada,
+        cantidad_eliminada: cantidadReal
+      });
+
+      if (registro.cantidad_facturada === 0) {
+        // Si no hay facturadas, eliminar el registro completamente
+        await pool.query(
+          `INSERT INTO AuditoriaTrazabilidad 
+           (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+           VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
+          [idNum, datosEliminacion, session.id_usuario]
+        );
+
+        await pool.query(
+          `DELETE FROM PiezaPintada WHERE id_pieza_pintada = ?`,
+          [idNum]
+        );
+      } else {
+        // Si hay facturadas, solo reducir la cantidad a las facturadas
+        await pool.query(
+          `INSERT INTO AuditoriaTrazabilidad 
+           (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+           VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
+          [idNum, datosEliminacion, session.id_usuario]
+        );
+
+        await pool.query(
+          `UPDATE PiezaPintada 
+           SET cantidad = ?, consumo_estimado_kg = ?
+           WHERE id_pieza_pintada = ?`,
+          [registro.cantidad_facturada, Number((consumoPorPieza * registro.cantidad_facturada).toFixed(4)), idNum]
+        );
+      }
+
+      return NextResponse.json({ 
+        ok: true, 
+        message: `Lote finalizado: ${cantidadReal} piezas pendientes eliminadas.${registro.cantidad_facturada > 0 ? ` Quedan ${registro.cantidad_facturada} facturadas.` : ''}`,
+        eliminadas: cantidadReal,
+        tipo: "completo"
+      });
+    } else {
+      // MODIFICACIÓN DEL LOTE (eliminación parcial)
+      // Datos para UPDATE: fecha, pieza, cabina, pintura, consumo, cantidad lote, facturadas, pendientes restantes, eliminadas
+      const datosModificacion = JSON.stringify({
+        fecha: registro.fecha,
+        pieza_nombre: registro.pieza_nombre || 'N/A',
+        cabina_nombre: registro.cabina_nombre || 'N/A',
+        pintura_nombre: registro.pintura_nombre || 'N/A',
+        consumo_estimado_kg: Number(nuevoConsumo.toFixed(4)),
+        cantidad_lote: nuevaCantidad,
+        cantidad_facturada: registro.cantidad_facturada,
+        cantidad_pendiente: nuevaCantidadPendiente,
+        cantidad_eliminada: cantidadReal
+      });
+
+      await pool.query(
+        `INSERT INTO AuditoriaTrazabilidad 
+         (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+         VALUES ('PiezaPintada', ?, 'UPDATE', ?, 'app_user', ?)`,
+        [idNum, datosModificacion, session.id_usuario]
+      );
+
+      await pool.query(
+        `UPDATE PiezaPintada 
+         SET cantidad = ?, consumo_estimado_kg = ?
+         WHERE id_pieza_pintada = ?`,
+        [nuevaCantidad, Number(nuevoConsumo.toFixed(4)), idNum]
+      );
+
+      return NextResponse.json({ 
+        ok: true, 
+        message: `Lote modificado: ${cantidadReal} piezas eliminadas. Quedan ${nuevaCantidadPendiente} pendientes y ${registro.cantidad_facturada} facturadas.`,
+        eliminadas: cantidadReal,
+        restantes: nuevaCantidad,
+        tipo: "parcial"
+      });
+    }
   } catch (error) {
     console.error("Error al eliminar pieza pintada:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
