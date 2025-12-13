@@ -96,10 +96,6 @@ export async function hasPermission(
   }
 }
 
-// ======================================
-//  VERIFICAR PERMISO A FORMULARIO (RBAC) - Usa Patrón Composite
-// ======================================
-
 export async function hasFormularioAccess(
   session: SessionData | null,
   formularioRuta: string
@@ -137,10 +133,6 @@ export async function hasFormularioAccess(
     return false;
   }
 }
-
-// ==============================
-// OBTENER FORMULARIOS ACCESIBLES - Usa Patrón Composite
-// ==============================
 
 interface FormularioAccesible {
   id_modulo: number;

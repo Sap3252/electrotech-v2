@@ -3,13 +3,9 @@ import { pool } from "@/lib/db";
 import { getSession, hasPermission } from "@/lib/auth";
 import { ResultSetHeader } from "mysql2";
 
-//====================================
-//Listar remitos con info del cliente
-//====================================
 export async function GET() {
   const session = await getSession();
   
-  // Verificar acceso al componente de tabla de remitos (ID 11)
   if (!session || !(await hasPermission(session, 11))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -33,13 +29,9 @@ export async function GET() {
   }
 }
 
-// =====================================
-//Crear remito + detalles
-// =====================================
 export async function POST(req: Request) {
   const session = await getSession();
   
-  // Verificar acceso al componente de formulario de remitos (ID 10)
   if (!session || !(await hasPermission(session, 10))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -55,7 +47,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Insertar remito
     const [remitoRes] = await pool.query<ResultSetHeader>(
       `
       INSERT INTO Remito (id_cliente, fecha_recepcion, cantidad_piezas)
@@ -66,7 +57,6 @@ export async function POST(req: Request) {
 
     const id_remito = remitoRes.insertId;
 
-    // Insertar detalles
     for (const p of piezas) {
       await pool.query(
         `

@@ -37,7 +37,6 @@ export async function PUT(
 ) {
   const session = await getSession();
 
-  // Verificar acceso al componente Editar Pieza Pintada (ID 8 formulario)
   if (!session || !(await hasPermission(session, 8)))
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
 
@@ -66,24 +65,20 @@ export async function DELETE(
 ) {
   const session = await getSession();
 
-  // Verificar acceso al componente Eliminar Pieza Pintada (ID 23)
   if (!session || !(await hasPermission(session, 23)))
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
 
   const { id } = await params;
   const idNum = Number(id);
 
-  // Obtener cantidad a eliminar del body (si no se envía, elimina todas las pendientes)
   let cantidadAEliminar: number | null = null;
   try {
     const body = await req.json();
     cantidadAEliminar = body.cantidad ? Number(body.cantidad) : null;
   } catch {
-    // Si no hay body, se eliminará todo el registro (si no tiene facturadas)
   }
 
   try {
-    // Obtener datos completos del registro antes de modificar/eliminar (para auditoría)
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT pp.*, p.detalle as pieza_nombre, 
               CONCAT(m.nombre, ' - ', c.nombre, ' (', t.nombre, ')') as pintura_nombre,
@@ -107,7 +102,6 @@ export async function DELETE(
     const registro = rows[0];
     const cantidadPendiente = registro.cantidad - registro.cantidad_facturada;
 
-    // Validar que hay piezas pendientes para eliminar
     if (cantidadPendiente <= 0) {
       return NextResponse.json(
         { error: "No hay piezas pendientes para eliminar. Todas están facturadas." },
@@ -115,10 +109,8 @@ export async function DELETE(
       );
     }
 
-    // Si no se especifica cantidad, eliminar todas las pendientes
     const cantidadReal = cantidadAEliminar ?? cantidadPendiente;
 
-    // Validar cantidad
     if (cantidadReal <= 0) {
       return NextResponse.json(
         { error: "La cantidad a eliminar debe ser mayor a 0" },
@@ -133,16 +125,12 @@ export async function DELETE(
       );
     }
 
-    // Calcular nuevo consumo proporcional
     const consumoPorPieza = registro.consumo_estimado_kg / registro.cantidad;
     const nuevoConsumo = (registro.cantidad - cantidadReal) * consumoPorPieza;
     const nuevaCantidad = registro.cantidad - cantidadReal;
     const nuevaCantidadPendiente = nuevaCantidad - registro.cantidad_facturada;
 
-    // Si se eliminan todas las piezas pendientes, el lote se considera terminado (DELETE)
     if (cantidadReal === cantidadPendiente) {
-      // ELIMINACIÓN COMPLETA DEL LOTE (todas las pendientes eliminadas)
-      // Datos para DELETE: fecha, pieza, cabina, pintura, consumo, cantidad lote, facturadas, eliminadas
       const datosEliminacion = JSON.stringify({
         fecha: registro.fecha,
         pieza_nombre: registro.pieza_nombre || 'N/A',
@@ -155,7 +143,6 @@ export async function DELETE(
       });
 
       if (registro.cantidad_facturada === 0) {
-        // Si no hay facturadas, eliminar el registro completamente
         await pool.query(
           `INSERT INTO AuditoriaTrazabilidad 
            (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
@@ -168,11 +155,11 @@ export async function DELETE(
           [idNum]
         );
       } else {
-        // Si hay facturadas, solo reducir la cantidad a las facturadas
+
         await pool.query(
           `INSERT INTO AuditoriaTrazabilidad 
-           (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
-           VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
+          (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+          VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
           [idNum, datosEliminacion, session.id_usuario]
         );
 
@@ -191,15 +178,12 @@ export async function DELETE(
         tipo: "completo"
       });
     } else {
-      // MODIFICACIÓN DEL LOTE (eliminación parcial)
-      // Datos ANTERIORES (antes de la modificación)
       const datosAnteriores = JSON.stringify({
         cantidad_lote: registro.cantidad,
         consumo_estimado_kg: Number(registro.consumo_estimado_kg).toFixed(4),
         cantidad_facturada: registro.cantidad_facturada
       });
 
-      // Datos NUEVOS (después de la modificación)
       const datosModificacion = JSON.stringify({
         fecha: registro.fecha,
         pieza_nombre: registro.pieza_nombre || 'N/A',
@@ -214,8 +198,8 @@ export async function DELETE(
 
       await pool.query(
         `INSERT INTO AuditoriaTrazabilidad 
-         (tabla_afectada, id_registro, accion, datos_anteriores, datos_nuevos, usuario_sistema, id_usuario)
-         VALUES ('PiezaPintada', ?, 'UPDATE', ?, ?, 'app_user', ?)`,
+        (tabla_afectada, id_registro, accion, datos_anteriores, datos_nuevos, usuario_sistema, id_usuario)
+        VALUES ('PiezaPintada', ?, 'UPDATE', ?, ?, 'app_user', ?)`,
         [idNum, datosAnteriores, datosModificacion, session.id_usuario]
       );
 

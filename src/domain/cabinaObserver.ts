@@ -49,16 +49,12 @@ export interface MachineryAlert {
   fecha: Date;
 }
 
-// ==========================================
-// INTERFACE OBSERVER
-// ==========================================
+
 export interface MachineryObserver {
   update(event: PaintingEvent): MachineryAlert[];
 }
 
-// ==========================================
-// SUBJECT (Observable)
-// ==========================================
+
 export class CabinaSubject {
   private observers: MachineryObserver[] = [];
 
@@ -82,15 +78,12 @@ export class CabinaSubject {
     return allAlerts;
   }
 
-  // Método principal para registrar una operación de pintado
   registerPainting(event: PaintingEvent): MachineryAlert[] {
     return this.notifyObservers(event);
   }
 }
 
-// ==========================================
-// OBSERVER: Límite Diario de Cabina
-// ==========================================
+
 export class LimiteDiarioCabinaObserver implements MachineryObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
@@ -213,11 +206,9 @@ export class HornoMaintenanceObserver implements CabinaObserver {
   }
 }
 
-// ==========================================
-// OBSERVER: Consumo de Gas de Hornos
-// ==========================================
+
 export class ConsumoGasObserver implements MachineryObserver {
-  private limiteGasDiario: number = 100; // m³ de gas diario máximo (configurable)
+  private limiteGasDiario: number = 100; 
 
   constructor(limiteGasDiario?: number) {
     if (limiteGasDiario) {
@@ -234,8 +225,8 @@ export class ConsumoGasObserver implements MachineryObserver {
     for (const horno of cabina.hornos) {
       const gasConsumido = horno.gasto_gas_hora * event.horas_trabajo;
       
-      // Alerta si el consumo de gas por operación es alto
-      if (gasConsumido > 10) { // Más de 10 m³ por operación
+
+      if (gasConsumido > 10) {
         alerts.push({
           tipo_equipo: 'horno',
           id_equipo: horno.id_horno,
@@ -252,9 +243,7 @@ export class ConsumoGasObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// OBSERVER: Estadísticas y Logging
-// ==========================================
+
 export class EstadisticasCabinaObserver implements MachineryObserver {
   private registros: Map<number, { total_piezas: number; total_horas: number }> = new Map();
 
@@ -264,7 +253,6 @@ export class EstadisticasCabinaObserver implements MachineryObserver {
     registro.total_horas += event.horas_trabajo;
     this.registros.set(event.id_cabina, registro);
 
-    // Este observer no genera alertas, solo trackea estadísticas
     return [];
   }
 
@@ -277,9 +265,7 @@ export class EstadisticasCabinaObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// FACTORY: Crear Subject con todos los observers
-// ==========================================
+
 export function createCabinaSubjectWithObservers(): CabinaSubject {
   const subject = new CabinaSubject();
   
@@ -292,7 +278,6 @@ export function createCabinaSubjectWithObservers(): CabinaSubject {
   return subject;
 }
 
-// Singleton para uso global
 let cabinaSubjectInstance: CabinaSubject | null = null;
 
 export function getCabinaSubject(): CabinaSubject {

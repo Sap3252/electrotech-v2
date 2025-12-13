@@ -194,9 +194,6 @@ export class ModuloComposite implements RBACComponent {
   }
 }
 
-// ============================================
-// BUILDER: Construye la estructura desde la BD
-// ============================================
 import { pool } from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 

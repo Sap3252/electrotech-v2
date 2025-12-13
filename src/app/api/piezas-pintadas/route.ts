@@ -6,13 +6,9 @@ import { HighDensityPaintStrategy } from "@/domain/strategy/HighDensityPaintStra
 import { RowDataPacket, ResultSetHeader } from "mysql2";
 import { getCabinaSubject, Cabina, Pistola, Horno } from "@/domain/cabinaObserver";
 
-// ============================
-// GET: obtener todas las piezas pintadas
-// ============================
 export async function GET() {
   const session = await getSession();
 
-  // Verificar acceso al componente Tabla Historial Producción (ID 9)
   if (!session || !(await hasPermission(session, 9))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -54,18 +50,9 @@ export async function GET() {
   }
 }
 
-
-// 2) A partir de acá seguís con el cálculo de consumo + INSERT
-
-
-// Lock para prevenir requests duplicados simultáneos
-// ============================
-// POST: crear nueva pieza pintada
-// ============================
 export async function POST(req: Request) {
   const session = await getSession();
 
-  // Verificar acceso al componente Formulario Registrar Produccion (ID 8)
   if (!session || !(await hasPermission(session, 8))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -74,7 +61,6 @@ export async function POST(req: Request) {
   const { id_pieza, id_pintura, id_cabina, cantidad, espesor_um, densidad_g_cm3, estrategia } = body;
 
   try {
-    // 0) Validar que se seleccionó una cabina
     if (!id_cabina) {
       
       return NextResponse.json(
@@ -83,7 +69,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 0.1) Obtener información completa de la cabina
     const [cabinaRows] = await pool.query<RowDataPacket[]>(
       `SELECT id_cabina, nombre, descripcion, max_piezas_diarias, piezas_hoy, estado
        FROM cabina
@@ -97,8 +82,7 @@ export async function POST(req: Request) {
 
     let cabinaData = cabinaRows[0];
 
-    // 0.2) Reset automático: Si la última fecha registrada en cabinahistorial fue de otro día, resetear piezas_hoy
-    const hoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const hoy = new Date().toISOString().split('T')[0];
     const [lastRows] = await pool.query<RowDataPacket[]>(
       `SELECT DATE(MAX(fecha)) AS last_fecha FROM cabinahistorial WHERE id_cabina = ?`,
       [id_cabina]
@@ -124,7 +108,6 @@ export async function POST(req: Request) {
       warningLimite = `Se excedió el límite recomendado. La cabina "${cabinaData.nombre}" tenía ${piezas_restantes} piezas disponibles de su límite diario (${cabinaData.max_piezas_diarias}), pero se pintaron ${cantidad}.`;
     }
 
-    // Obtener pistolas activas de la cabina
     const [pistolasRows] = await pool.query<RowDataPacket[]>(`
       SELECT p.* 
       FROM pistola p
@@ -139,7 +122,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Obtener hornos activos de la cabina
     const [hornosRows] = await pool.query<RowDataPacket[]>(`
       SELECT h.* 
       FROM horno h
@@ -153,7 +135,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    // 1) Verificar stock disponible
+
     const [stockRows] = await pool.query<RowDataPacket[]>(
       "SELECT stock_disponible FROM StockPieza WHERE id_pieza = ?",
       [id_pieza]
@@ -170,7 +152,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Obtener dimensiones y nombre de la pieza
     const [piezaRows] = await pool.query<RowDataPacket[]>(
       "SELECT detalle, ancho_m, alto_m FROM Pieza WHERE id_pieza = ?",
       [id_pieza]
@@ -183,7 +164,6 @@ export async function POST(req: Request) {
     const pieza = piezaRows[0];
     const piezaNombre = pieza.detalle;
 
-    // 3) Calcular consumo usando patron Strategy 
     const strategy = estrategia === "highdensity" 
       ? new HighDensityPaintStrategy() 
       : new StandardPaintStrategy();
@@ -197,7 +177,6 @@ export async function POST(req: Request) {
     
     const consumo_total_kg = consumo_por_pieza * cantidad;
 
-    // 4) Verificar stock de pintura disponible y obtener nombre
     const [pinturaRows] = await pool.query<RowDataPacket[]>(
       `SELECT p.cantidad_kg, CONCAT(m.nombre, ' - ', c.nombre, ' (', t.nombre, ')') as pintura_nombre
        FROM Pintura p
@@ -223,13 +202,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5) Insertar registro en PiezaPintada y ejecutar actualizaciones relacionadas
-    // Usamos una transacción con lock para evitar duplicados
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
 
-      // Verificar duplicados DENTRO de la transacción con lock
       const [duplicadoRows] = await conn.query<RowDataPacket[]>(
         `SELECT id_pieza_pintada FROM PiezaPintada 
          WHERE id_pieza = ? AND id_pintura = ? AND id_cabina = ? AND cantidad = ?
@@ -255,11 +231,9 @@ export async function POST(req: Request) {
         [id_pieza, id_pintura, id_cabina, cantidad, consumo_total_kg]
       );
 
-      // Obtener el ID de la pieza pintada insertada
       const [insertRows] = insertResult as [ResultSetHeader, unknown];
       const idPiezaPintada = insertRows.insertId;
 
-      // Crear registro de auditoría directamente con toda la información
       const pinturaNombre = pinturaRows[0]?.pintura_nombre || 'N/A';
       const cabinaNombre = cabinaData.nombre || 'N/A';
       const datosNuevos = JSON.stringify({
@@ -280,13 +254,11 @@ export async function POST(req: Request) {
         [idPiezaPintada, datosNuevos, 'app_user', session.id_usuario]
       );
 
-      // 6) Descontar la pintura consumida del stock
       await conn.query(
         `UPDATE Pintura SET cantidad_kg = cantidad_kg - ? WHERE id_pintura = ?`,
         [consumo_total_kg, id_pintura]
       );
 
-      // 6.1) Descontar piezas del stock (StockPieza)
       await conn.query(
         `UPDATE StockPieza SET 
           total_pintada = total_pintada + ?,
@@ -295,10 +267,8 @@ export async function POST(req: Request) {
         [cantidad, cantidad, id_pieza]
       );
 
-      // 7) Usar el sistema Observer para generar alertas
-      const horas_trabajo = cantidad * 0.1; // Aproximado: 0.1 horas por pieza
+      const horas_trabajo = cantidad * 0.1;
 
-      // Construir objeto cabina completo para el Observer
       const cabina: Cabina = {
       id_cabina: cabinaData.id_cabina,
       nombre: cabinaData.nombre,
@@ -336,8 +306,6 @@ export async function POST(req: Request) {
         fecha: new Date()
       });
 
-      // 8) Guardar alertas en la base de datos
-      // Tabla alertasmaquinaria: id_alerta, tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, leida, fecha
       for (const alerta of alertas) {
         await conn.query(
           `INSERT INTO alertasmaquinaria (tipo_equipo, id_equipo, tipo_alerta, mensaje, nivel, leida, fecha)
@@ -346,16 +314,11 @@ export async function POST(req: Request) {
         );
       }
 
-      // 9) Persistir uso en cabinahistorial, actualizar horas de pistolas/hornos y contador de piezas en cabina
-      // Assumptions:
-      // - horas_trabajo es el total para la operacion; se distribuye equitativamente entre pistolas/hornos asignados
-      // - gas_consumido se calcula como horas_trabajo * average(gasto_gas_hora) of assigned hornos
       const numPistolas = pistolasRows.length || 1;
       const numHornos = hornosRows.length || 1;
       const horasPorPistola = horas_trabajo / numPistolas;
       const horasPorHorno = horas_trabajo / numHornos;
 
-      // Update pistolas horas_uso
       for (const p of pistolasRows) {
         await conn.query(
           `UPDATE pistola SET horas_uso = horas_uso + ? WHERE id_pistola = ?`,
@@ -363,7 +326,6 @@ export async function POST(req: Request) {
         );
       }
 
-      // Update hornos horas_uso and compute gas
       let sumaGastoHora = 0;
       for (const h of hornosRows) {
         sumaGastoHora += Number(h.gasto_gas_hora) || 0;
@@ -376,14 +338,12 @@ export async function POST(req: Request) {
       const gastoPromedioHora = numHornos > 0 ? sumaGastoHora / numHornos : 0;
       const gasConsumido = horas_trabajo * gastoPromedioHora;
 
-      // Insertar registro en cabinahistorial
       await conn.query(
         `INSERT INTO cabinahistorial (id_cabina, fecha, piezas_pintadas, id_pieza, id_pintura, horas_trabajo, gas_consumido)
          VALUES (?, NOW(), ?, ?, ?, ?, ?)`,
         [id_cabina, cantidad, id_pieza, id_pintura, horas_trabajo, gasConsumido]
       );
 
-      // Actualizar contador de piezas_hoy en cabina (no usamos columna ultimo_uso en el esquema)
       await conn.query(
         `UPDATE cabina SET piezas_hoy = piezas_hoy + ? WHERE id_cabina = ?`,
         [cantidad, id_cabina]
@@ -391,7 +351,6 @@ export async function POST(req: Request) {
 
       await conn.commit();
 
-      // Preparar respuesta usando los datos ya calculados
       const nuevas_piezas_hoy = Number(cabinaData.piezas_hoy) + cantidad;
       const nuevo_porcentaje = Math.round((nuevas_piezas_hoy / cabinaData.max_piezas_diarias) * 100);
 
@@ -434,16 +393,12 @@ export async function POST(req: Request) {
   }
 }
 
-// ============================
-//actualizar cantidad_facturada
-// ============================
 export async function PATCH(
   req: Request,
   context: { params: { id: string } }
 ) {
   const session = await getSession();
 
-  // Verificar acceso al componente Formulario Registrar Producción (ID 8)
   if (!session || !(await hasPermission(session, 8))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }

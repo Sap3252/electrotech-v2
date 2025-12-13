@@ -6,7 +6,6 @@ import { RowDataPacket, ResultSetHeader } from "mysql2";
 export async function POST(req: Request) {
   const session = await getSession();
   
-  // Verificar acceso al componente de formulario de facturas (ID 14)
   if (!session || !(await hasPermission(session, 14))) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
@@ -22,7 +21,6 @@ export async function POST(req: Request) {
     try {
       await conn.beginTransaction();
 
-      // 1) CREAR FACTURA
       const [facturaResult] = await conn.query<ResultSetHeader>(
         `INSERT INTO Factura (id_cliente, fecha, total)
          VALUES (?, NOW(), 0)`,
@@ -32,11 +30,9 @@ export async function POST(req: Request) {
       const id_factura = facturaResult.insertId;
       let totalFactura = 0;
 
-      // 2) INSERTAR DETALLES
       for (const item of items) {
         const { id_pieza_pintada, cantidad, precio_unitario } = item;
 
-        // 2.1) Verificar disponibilidad real al momento
         const [rows] = await conn.query<RowDataPacket[]>(
           `SELECT cantidad, cantidad_facturada 
            FROM PiezaPintada 
@@ -58,7 +54,6 @@ export async function POST(req: Request) {
         const subtotal = cantidad * precio_unitario;
         totalFactura += subtotal;
 
-        // 2.2) Insertar detalle
         await conn.query(
           `INSERT INTO FacturaDetalle 
            (id_factura, id_pieza_pintada, cantidad, precio_unitario)
@@ -66,7 +61,6 @@ export async function POST(req: Request) {
           [id_factura, id_pieza_pintada, cantidad, precio_unitario]
         );
 
-        // 2.3) Actualizar cantidad facturada
         await conn.query(
           `UPDATE PiezaPintada
            SET cantidad_facturada = cantidad_facturada + ?
@@ -74,7 +68,6 @@ export async function POST(req: Request) {
           [cantidad, id_pieza_pintada]
         );
 
-        // 2.4) Obtener info adicional para auditoría
         const [piezaInfo] = await conn.query<RowDataPacket[]>(
           `SELECT pp.id_pieza_pintada, p.detalle as pieza_nombre, 
                   CONCAT(m.nombre, ' - ', c.nombre, ' (', t.nombre, ')') as pintura_nombre, 
@@ -90,7 +83,6 @@ export async function POST(req: Request) {
           [id_pieza_pintada]
         );
 
-        // 2.5) Registrar auditoría FACTURADO para cada lote
         const datosFacturado = JSON.stringify({
           id_factura: id_factura,
           id_pieza_pintada: id_pieza_pintada,
@@ -105,13 +97,12 @@ export async function POST(req: Request) {
 
         await conn.query(
           `INSERT INTO AuditoriaTrazabilidad 
-           (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
-           VALUES ('PiezaPintada', ?, 'FACTURADO', ?, 'app_user', ?)`,
+          (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
+          VALUES ('PiezaPintada', ?, 'FACTURADO', ?, 'app_user', ?)`,
           [id_pieza_pintada, datosFacturado, session.id_usuario]
         );
       }
 
-      // 3) Actualizar total factura
       await conn.query(
         `UPDATE Factura SET total = ? WHERE id_factura = ?`,
         [totalFactura, id_factura]

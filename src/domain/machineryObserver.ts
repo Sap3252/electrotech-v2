@@ -49,16 +49,10 @@ export interface MachineryAlert {
   fecha: Date;
 }
 
-// ==========================================
-// INTERFACE OBSERVER
-// ==========================================
 export interface MachineryObserver {
   update(event: PaintingEvent): MachineryAlert[];
 }
 
-// ==========================================
-// SUBJECT (Observable)
-// ==========================================
 export class CabinaSubject {
   private observers: MachineryObserver[] = [];
 
@@ -89,9 +83,6 @@ export class CabinaSubject {
   }
 }
 
-// ==========================================
-// OBSERVER: Límite Diario de Cabina
-// ==========================================
 export class LimiteDiarioCabinaObserver implements MachineryObserver {
   update(event: PaintingEvent): MachineryAlert[] {
     const alerts: MachineryAlert[] = [];
@@ -214,9 +205,6 @@ export class HornoMaintenanceObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// OBSERVER: Consumo de Gas de Hornos
-// ==========================================
 export class ConsumoGasObserver implements MachineryObserver {
   private limiteGasDiario: number = 100; // m³ de gas diario máximo (configurable)
 
@@ -253,9 +241,6 @@ export class ConsumoGasObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// OBSERVER: Estadísticas y Logging
-// ==========================================
 export class EstadisticasCabinaObserver implements MachineryObserver {
   private registros: Map<number, { total_piezas: number; total_horas: number }> = new Map();
 
@@ -278,9 +263,6 @@ export class EstadisticasCabinaObserver implements MachineryObserver {
   }
 }
 
-// ==========================================
-// FACTORY: Crear Subject con todos los observers
-// ==========================================
 export function createCabinaSubjectWithObservers(): CabinaSubject {
   const subject = new CabinaSubject();
 
