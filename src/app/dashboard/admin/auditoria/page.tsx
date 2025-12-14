@@ -109,7 +109,7 @@ type ReportesData = {
   };
 };
 
-// Colores para gráficos
+
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 const ACCION_COLORS: Record<string, string> = {
   INSERT: "#22c55e",
@@ -151,7 +151,7 @@ export default function AuditoriaPage() {
 
   const limit = 20;
 
-  // Cargar usuarios
+
   useEffect(() => {
     async function fetchUsuarios() {
       try {
@@ -167,7 +167,7 @@ export default function AuditoriaPage() {
     fetchUsuarios();
   }, []);
 
-  // Cargar lotes
+
   useEffect(() => {
     async function fetchLotes() {
       try {
@@ -183,7 +183,7 @@ export default function AuditoriaPage() {
     fetchLotes();
   }, []);
 
-  // Fetch Sesiones
+
   const fetchSesiones = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -213,7 +213,7 @@ export default function AuditoriaPage() {
     }
   }, [sesionUsuarioId, sesionFechaDesde, sesionFechaHasta, sesionesPage, router]);
 
-  // Fetch Trazabilidad
+
   const fetchAuditoria = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -243,7 +243,7 @@ export default function AuditoriaPage() {
     }
   }, [accion, fechaDesde, fechaHasta, loteSeleccionado, page, router]);
 
-  // Fetch Reportes
+
   const fetchReportes = useCallback(async () => {
     try {
       setReportesLoading(true);
@@ -324,7 +324,7 @@ export default function AuditoriaPage() {
     }
   };
 
-  // Helper para obtener valores de datos_nuevos de forma segura
+
   const getDatosNuevos = (record: AuditoriaRecord | null) => {
     if (!record?.datos_nuevos) return null;
     const d = record.datos_nuevos as Record<string, unknown>;
@@ -336,7 +336,7 @@ export default function AuditoriaPage() {
       pintura_nombre: d.pintura_nombre != null ? String(d.pintura_nombre) : null,
       cantidad_facturada: d.cantidad_facturada != null ? String(d.cantidad_facturada) : null,
       consumo_estimado_kg: d.consumo_estimado_kg != null ? Number(d.consumo_estimado_kg).toFixed(4) : null,
-      // Campos para eliminación (parcial o completa)
+
       cantidad_lote: d.cantidad_lote != null ? String(d.cantidad_lote) : null,
       cantidad_eliminada: d.cantidad_eliminada != null ? String(d.cantidad_eliminada) : null,
       cantidad_pendiente: d.cantidad_pendiente != null ? String(d.cantidad_pendiente) : null,
@@ -344,7 +344,7 @@ export default function AuditoriaPage() {
     };
   };
 
-  // Helper para obtener datos de registros eliminados (DELETE usa datos_nuevos, no datos_anteriores)
+
   const getDatosEliminados = (record: AuditoriaRecord | null) => {
     if (!record?.datos_nuevos) return null;
     const d = record.datos_nuevos as Record<string, unknown>;
@@ -1210,7 +1210,7 @@ export default function AuditoriaPage() {
                 </Card>
               </div>
 
-              {/* Para UPDATE de eliminación parcial - mostrar tarjetas especiales */}
+              {/*Para UPDATE */}
               {selectedRecord.accion === "UPDATE" && selectedRecord.datos_nuevos && 
                !!(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (() => {
                 const datos = getDatosNuevos(selectedRecord);
@@ -1298,7 +1298,7 @@ export default function AuditoriaPage() {
                 );
               })()}
 
-              {/* Para UPDATE normal mostrar campos cambiados (no eliminación parcial) */}
+              {/* Para UPDATE */}
               {selectedRecord.accion === "UPDATE" && selectedRecord.datos_anteriores && selectedRecord.datos_nuevos &&
                !(selectedRecord.datos_nuevos as Record<string, unknown>).cantidad_eliminada && (() => {
                 const datosAnteriores = selectedRecord.datos_anteriores as Record<string, unknown>;
@@ -1367,7 +1367,7 @@ export default function AuditoriaPage() {
                 );
               })()}
 
-              {/* Datos Nuevos - Diseño bonito con tarjetas */}
+              {/* Datos Nuevos  */}
               {selectedRecord.datos_nuevos && selectedRecord.accion === "INSERT" && (() => {
                 const datos = getDatosNuevos(selectedRecord);
                 if (!datos) return null;
@@ -1427,9 +1427,12 @@ export default function AuditoriaPage() {
                 );
               })()}
 
-              {/* Datos del registro eliminado (para DELETE - usa datos_nuevos) */}
+              {/* Para DELETE */}
               {selectedRecord.datos_nuevos && selectedRecord.accion === "DELETE" && (() => {
                 const datos = getDatosEliminados(selectedRecord);
+                const datosAnteriores = selectedRecord.datos_anteriores as Record<string, unknown> | null;
+                const cantidadAnterior = datosAnteriores?.cantidad_lote ?? datos?.cantidad_lote;
+                const cantidadActual = datos?.cantidad_facturada ? Number(datos.cantidad_facturada) : 0;
                 if (!datos) return null;
                 return (
                   <Card className="border-l-4 border-l-red-500">
@@ -1469,13 +1472,17 @@ export default function AuditoriaPage() {
                             <p className="font-medium text-base">{datos.consumo_estimado_kg} kg</p>
                           </div>
                         )}
-                        {datos.cantidad_lote && (
-                          <div className="bg-blue-50 p-4 rounded-lg">
-                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote</Label>
-                            <p className="font-medium text-lg">{datos.cantidad_lote} unidades</p>
+                        {cantidadAnterior !== undefined && (
+                          <div className="bg-red-50 p-4 rounded-lg border border-red-300">
+                            <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote Anterior</Label>
+                            <p className="font-bold text-xl text-red-700">{cantidadAnterior} unidades</p>
                           </div>
                         )}
-                        {datos.cantidad_facturada && (
+                        <div className="bg-gray-100 p-4 rounded-lg border border-gray-300">
+                          <Label className="text-gray-500 text-xs block mb-1">Cantidad Lote Actual</Label>
+                          <p className="font-bold text-xl text-gray-700">{cantidadActual} unidades</p>
+                        </div>
+                        {datos.cantidad_facturada && Number(datos.cantidad_facturada) > 0 && (
                           <div className="bg-green-50 p-4 rounded-lg">
                             <Label className="text-gray-500 text-xs block mb-1">Cantidad Facturada</Label>
                             <p className="font-medium text-lg text-green-700">{datos.cantidad_facturada} unidades</p>
@@ -1493,7 +1500,7 @@ export default function AuditoriaPage() {
                 );
               })()}
 
-              {/* Datos del registro facturado (para FACTURADO) */}
+              {/* Para FACTURADO */}
               {selectedRecord.datos_nuevos && selectedRecord.accion === "FACTURADO" && (() => {
                 const datos = getDatosFacturados(selectedRecord);
                 if (!datos) return null;

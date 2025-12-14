@@ -131,6 +131,13 @@ export async function DELETE(
     const nuevaCantidadPendiente = nuevaCantidad - registro.cantidad_facturada;
 
     if (cantidadReal === cantidadPendiente) {
+      // Datos anteriores para auditoría (estado antes de eliminar)
+      const datosAnterioresDelete = JSON.stringify({
+        cantidad_lote: registro.cantidad,
+        consumo_estimado_kg: Number(registro.consumo_estimado_kg).toFixed(4),
+        cantidad_facturada: registro.cantidad_facturada
+      });
+
       const datosEliminacion = JSON.stringify({
         fecha: registro.fecha,
         pieza_nombre: registro.pieza_nombre || 'N/A',
@@ -145,9 +152,9 @@ export async function DELETE(
       if (registro.cantidad_facturada === 0) {
         await pool.query(
           `INSERT INTO AuditoriaTrazabilidad 
-           (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
-           VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
-          [idNum, datosEliminacion, session.id_usuario]
+           (tabla_afectada, id_registro, accion, datos_anteriores, datos_nuevos, usuario_sistema, id_usuario)
+           VALUES ('PiezaPintada', ?, 'DELETE', ?, ?, 'app_user', ?)`,
+          [idNum, datosAnterioresDelete, datosEliminacion, session.id_usuario]
         );
 
         await pool.query(
@@ -158,9 +165,9 @@ export async function DELETE(
 
         await pool.query(
           `INSERT INTO AuditoriaTrazabilidad 
-          (tabla_afectada, id_registro, accion, datos_nuevos, usuario_sistema, id_usuario)
-          VALUES ('PiezaPintada', ?, 'DELETE', ?, 'app_user', ?)`,
-          [idNum, datosEliminacion, session.id_usuario]
+          (tabla_afectada, id_registro, accion, datos_anteriores, datos_nuevos, usuario_sistema, id_usuario)
+          VALUES ('PiezaPintada', ?, 'DELETE', ?, ?, 'app_user', ?)`,
+          [idNum, datosAnterioresDelete, datosEliminacion, session.id_usuario]
         );
 
         await pool.query(
