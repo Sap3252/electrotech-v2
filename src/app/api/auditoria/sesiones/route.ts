@@ -10,7 +10,7 @@ interface SesionRow extends RowDataPacket {
   usuario_email: string;
   fecha_hora_login: string;
   fecha_hora_logout: string | null;
-  duracion_minutos: number | null;
+  duracion_segundos: number | null;
 }
 
 // ============================
@@ -42,9 +42,9 @@ export async function GET(request: Request) {
         DATE_FORMAT(a.fecha_hora_logout, '%Y-%m-%d %H:%i:%s') AS fecha_hora_logout,
         CASE 
           WHEN a.fecha_hora_logout IS NOT NULL 
-          THEN TIMESTAMPDIFF(MINUTE, a.fecha_hora_login, a.fecha_hora_logout)
+          THEN TIMESTAMPDIFF(SECOND, a.fecha_hora_login, a.fecha_hora_logout)
           ELSE NULL
-        END AS duracion_minutos
+        END AS duracion_segundos
       FROM auditoriasesion a
       JOIN Usuario u ON u.id_usuario = a.id_usuario
       WHERE 1=1
@@ -103,8 +103,8 @@ export async function GET(request: Request) {
       SELECT 
         COUNT(*) as total_sesiones,
         SUM(CASE WHEN fecha_hora_logout IS NOT NULL 
-            THEN TIMESTAMPDIFF(MINUTE, fecha_hora_login, fecha_hora_logout) 
-            ELSE 0 END) as tiempo_total_minutos
+            THEN TIMESTAMPDIFF(SECOND, fecha_hora_login, fecha_hora_logout) 
+            ELSE 0 END) as tiempo_total_segundos
       FROM auditoriasesion
       WHERE 1=1
     `;
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
     }
 
     const [statsResult] = await pool.query<RowDataPacket[]>(statsQuery, statsParams);
-    const stats = statsResult[0] as { total_sesiones: number; tiempo_total_minutos: number };
+    const stats = statsResult[0] as { total_sesiones: number; tiempo_total_segundos: number };
 
     return NextResponse.json({
       data: rows,
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
       offset,
       stats: {
         totalSesiones: stats.total_sesiones || 0,
-        tiempoTotalMinutos: stats.tiempo_total_minutos || 0,
+        tiempoTotalSegundos: stats.tiempo_total_segundos || 0,
       },
     });
   } catch (error) {

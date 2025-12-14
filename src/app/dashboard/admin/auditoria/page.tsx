@@ -70,7 +70,7 @@ type SesionRecord = {
   usuario_email: string;
   fecha_hora_login: string;
   fecha_hora_logout: string | null;
-  duracion_minutos: number | null;
+  duracion_segundos: number | null;
 };
 
 type Usuario = {
@@ -128,7 +128,7 @@ export default function AuditoriaPage() {
   const [sesiones, setSesiones] = useState<SesionRecord[]>([]);
   const [sesionesTotal, setSesionesTotal] = useState(0);
   const [sesionesPage, setSesionesPage] = useState(0);
-  const [sesionesStats, setSesionesStats] = useState({ totalSesiones: 0, tiempoTotalMinutos: 0 });
+  const [sesionesStats, setSesionesStats] = useState({ totalSesiones: 0, tiempoTotalSegundos: 0 });
   const [sesionUsuarioId, setSesionUsuarioId] = useState<string>("");
   const [sesionFechaDesde, setSesionFechaDesde] = useState<string>("");
   const [sesionFechaHasta, setSesionFechaHasta] = useState<string>("");
@@ -273,19 +273,39 @@ export default function AuditoriaPage() {
     }
   }, [activeTab, fetchSesiones, fetchAuditoria, fetchReportes]);
 
-  const formatDuracion = (minutos: number | null) => {
-    if (minutos === null) return "En curso";
+  const formatDuracion = (segundos: number | null) => {
+    if (segundos === null) return "En curso";
+    
+    if (segundos < 60) {
+      return `${segundos}s`;
+    }
+    
+    const minutos = Math.floor(segundos / 60);
+    
+    if (minutos < 60) {
+      return `${minutos}m`;
+    }
+    
     const horas = Math.floor(minutos / 60);
     const mins = minutos % 60;
-    if (horas > 0) {
-      return `${horas}h ${mins}m`;
-    }
-    return `${mins}m`;
+    
+    return `${horas}h ${mins}m`;
   };
 
-  const formatTiempoTotal = (minutos: number) => {
+  const formatTiempoTotal = (segundos: number) => {
+    if (segundos < 60) {
+      return `${segundos}s`;
+    }
+    
+    const minutos = Math.floor(segundos / 60);
+    
+    if (minutos < 60) {
+      return `${minutos}m`;
+    }
+    
     const horas = Math.floor(minutos / 60);
     const mins = minutos % 60;
+    
     return `${horas}h ${mins}m`;
   };
 
@@ -493,7 +513,7 @@ export default function AuditoriaPage() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-center text-green-600">
-                  {formatTiempoTotal(sesionesStats.tiempoTotalMinutos)}
+                  {formatTiempoTotal(sesionesStats.tiempoTotalSegundos)}
                 </div>
                 <p className="text-center text-gray-500">Tiempo Total Conectado</p>
               </CardContent>
@@ -502,8 +522,8 @@ export default function AuditoriaPage() {
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-center text-purple-600">
                   {sesionesStats.totalSesiones > 0 
-                    ? formatTiempoTotal(Math.round(sesionesStats.tiempoTotalMinutos / sesionesStats.totalSesiones))
-                    : "0m"}
+                    ? formatTiempoTotal(Math.round(sesionesStats.tiempoTotalSegundos / sesionesStats.totalSesiones))
+                    : "0s"}
                 </div>
                 <p className="text-center text-gray-500">Promedio por Sesión</p>
               </CardContent>
@@ -548,8 +568,8 @@ export default function AuditoriaPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className={sesion.duracion_minutos === null ? "text-blue-600 font-medium" : ""}>
-                              {formatDuracion(sesion.duracion_minutos)}
+                            <span className={sesion.duracion_segundos === null ? "text-blue-600 font-medium" : ""}>
+                              {formatDuracion(sesion.duracion_segundos)}
                             </span>
                           </TableCell>
                         </TableRow>
