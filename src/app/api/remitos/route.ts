@@ -47,12 +47,14 @@ export async function POST(req: Request) {
       );
     }
 
+    const cantidadTotalPiezas = piezas.reduce((sum: number, p: any) => sum + (p.cantidad || 0), 0);
+
     const [remitoRes] = await pool.query<ResultSetHeader>(
       `
       INSERT INTO Remito (id_cliente, fecha_recepcion, cantidad_piezas)
       VALUES (?, ?, ?)
       `,
-      [id_cliente, fecha_recepcion, piezas.length]
+      [id_cliente, fecha_recepcion, cantidadTotalPiezas]
     );
 
     const id_remito = remitoRes.insertId;

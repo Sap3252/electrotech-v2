@@ -98,9 +98,9 @@ function RemitosPage() {
     if (form.fecha_recepcion) {
       const fechaIngresada = new Date(form.fecha_recepcion);
       const fechaActual = new Date();
-      fechaActual.setHours(0, 0, 0, 0);
+
       if (fechaIngresada > fechaActual) {
-        newErrors.fecha = "La fecha no puede ser mayor a la fecha actual.";
+        newErrors.fecha = "La fecha no puede ser mayor a la fecha y hora actual.";
       }
     }
 
